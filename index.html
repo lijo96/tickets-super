@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a7f4e">
+<title>Tickets Súper — Jito &amp; Larita</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+  :root{
+    --bg:#f4f6f5; --card:#ffffff; --text:#1c2b24; --muted:#6b7a72;
+    --accent:#1a7f4e; --accent-soft:#e3f2ea;
+    --jito:#2563eb; --jito-soft:#e0eaff;
+    --larita:#c2418f; --larita-soft:#fbe3f1;
+    --ambos:#1a7f4e; --ambos-soft:#e3f2ea;
+    --danger:#c0392b; --border:#e2e8e4;
+    --radius:14px; --shadow:0 1px 4px rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--text);
+    padding-bottom:calc(70px + env(safe-area-inset-bottom));
+    min-height:100vh;
+  }
+  header{
+    background:var(--accent); color:#fff;
+    padding:calc(14px + env(safe-area-inset-top)) 18px 14px;
+    position:sticky; top:0; z-index:10;
+    display:flex; align-items:center; gap:10px;
+  }
+  header h1{font-size:1.15rem; margin:0; font-weight:700; flex:1;}
+  header .sub{font-size:.8rem; opacity:.85;}
+  main{padding:16px; max-width:640px; margin:0 auto;}
+  .card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-bottom:14px;}
+  .muted{color:var(--muted); font-size:.85rem;}
+  .center{text-align:center;}
+  button{
+    font-family:inherit; font-size:1rem; border:none; border-radius:12px;
+    padding:12px 18px; cursor:pointer; font-weight:600;
+  }
+  .btn-primary{background:var(--accent); color:#fff; width:100%;}
+  .btn-secondary{background:var(--accent-soft); color:var(--accent); width:100%;}
+  .btn-danger-soft{background:#fdecea; color:var(--danger); width:100%;}
+  .btn-small{padding:7px 12px; font-size:.85rem; border-radius:9px;}
+  button:disabled{opacity:.5;}
+  .row{display:flex; gap:10px;}
+  .row>*{flex:1;}
+  input[type=text],input[type=password],input[type=number],select{
+    width:100%; padding:11px 12px; border:1px solid var(--border); border-radius:10px;
+    font-size:1rem; font-family:inherit; background:#fff; color:var(--text);
+  }
+  label{font-size:.82rem; font-weight:600; color:var(--muted); display:block; margin:12px 0 5px;}
+
+  /* bottom nav */
+  nav{
+    position:fixed; bottom:0; left:0; right:0; z-index:10;
+    background:var(--card); border-top:1px solid var(--border);
+    display:flex; padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav button{
+    flex:1; background:none; border-radius:0; padding:9px 0 7px;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    font-size:.7rem; color:var(--muted); font-weight:600;
+  }
+  nav button .ico{font-size:1.35rem; line-height:1;}
+  nav button.active{color:var(--accent);}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* balance banner */
+  .balance{
+    border-radius:var(--radius); padding:18px 16px; margin-bottom:14px;
+    text-align:center; box-shadow:var(--shadow);
+  }
+  .balance .amount{font-size:1.7rem; font-weight:800; margin:4px 0;}
+  .balance.owes-jito{background:var(--jito-soft); color:var(--jito);}
+  .balance.owes-larita{background:var(--larita-soft); color:var(--larita);}
+  .balance.even{background:var(--ambos-soft); color:var(--ambos);}
+
+  /* ticket list */
+  .ticket-item{
+    display:flex; align-items:center; gap:12px; padding:12px 4px;
+    border-bottom:1px solid var(--border); cursor:pointer;
+  }
+  .ticket-item:last-child{border-bottom:none;}
+  .ticket-item .info{flex:1; min-width:0;}
+  .ticket-item .store{font-weight:700;}
+  .ticket-item .meta{font-size:.78rem; color:var(--muted);}
+  .ticket-item .bal{font-weight:700; font-size:.9rem; white-space:nowrap; text-align:right;}
+  .payer-chip{
+    font-size:.68rem; font-weight:700; padding:2px 8px; border-radius:20px; display:inline-block;
+  }
+  .payer-chip.jito{background:var(--jito-soft); color:var(--jito);}
+  .payer-chip.larita{background:var(--larita-soft); color:var(--larita);}
+
+  /* fab */
+  .fab{
+    position:fixed; right:18px; bottom:calc(78px + env(safe-area-inset-bottom)); z-index:11;
+    width:60px; height:60px; border-radius:50%;
+    background:var(--accent); color:#fff; font-size:1.6rem;
+    box-shadow:0 4px 12px rgba(0,0,0,.25);
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* modal */
+  .modal-bg{
+    position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:20;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .modal-bg.open{display:flex;}
+  .modal{
+    background:var(--card); border-radius:18px 18px 0 0; width:100%; max-width:640px;
+    padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+    max-height:88vh; overflow-y:auto;
+  }
+  .modal h3{margin:0 0 14px;}
+  .payer-select{display:flex; gap:12px; margin:10px 0 4px;}
+  .payer-select button{
+    flex:1; padding:20px 10px; font-size:1.1rem; font-weight:800; border-radius:14px;
+  }
+  .payer-select .p-jito{background:var(--jito-soft); color:var(--jito);}
+  .payer-select .p-larita{background:var(--larita-soft); color:var(--larita);}
+  .payer-select button.sel{outline:3px solid currentColor;}
+
+  #preview{width:100%; border-radius:12px; margin:12px 0; max-height:45vh; object-fit:contain; background:#eee;}
+
+  .spinner{
+    width:44px; height:44px; border:5px solid var(--accent-soft); border-top-color:var(--accent);
+    border-radius:50%; animation:spin 1s linear infinite; margin:18px auto;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* review items */
+  .item-row{
+    display:flex; align-items:center; gap:8px; padding:10px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .item-row:last-child{border-bottom:none;}
+  .item-row .iname{flex:1; min-width:0; cursor:pointer;}
+  .item-row .iname .n{font-weight:600; font-size:.92rem;}
+  .item-row .iname .orig{font-size:.7rem; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .item-row .iprice{font-weight:700; font-size:.92rem; white-space:nowrap; cursor:pointer;}
+  .seg{display:flex; border-radius:10px; overflow:hidden; border:1px solid var(--border);}
+  .seg button{
+    border-radius:0; padding:8px 0; width:38px; font-size:.78rem; font-weight:800;
+    background:#f2f4f3; color:var(--muted);
+  }
+  .seg button.sel-jito{background:var(--jito); color:#fff;}
+  .seg button.sel-ambos{background:var(--ambos); color:#fff;}
+  .seg button.sel-larita{background:var(--larita); color:#fff;}
+  .review-summary{
+    position:sticky; bottom:calc(70px + env(safe-area-inset-bottom));
+    background:var(--card); border:1px solid var(--border);
+    border-radius:var(--radius); box-shadow:0 -2px 10px rgba(0,0,0,.08);
+    padding:12px 16px; margin-top:14px;
+  }
+  .quick-assign{display:flex; gap:8px; margin:8px 0 12px; flex-wrap:wrap;}
+  .quick-assign button{font-size:.75rem; padding:6px 10px; border-radius:8px;}
+  .qa-jito{background:var(--jito-soft); color:var(--jito);}
+  .qa-ambos{background:var(--ambos-soft); color:var(--ambos);}
+  .qa-larita{background:var(--larita-soft); color:var(--larita);}
+
+  /* history */
+  .hist-item{padding:13px 4px; border-bottom:1px solid var(--border); cursor:pointer;}
+  .hist-item:last-child{border-bottom:none;}
+  .hist-item .name{font-weight:700;}
+  .hist-item .meta{font-size:.78rem; color:var(--muted);}
+  .hist-item .final{font-weight:700; font-size:.9rem; margin-top:2px;}
+
+  .error-box{background:#fdecea; color:var(--danger); border-radius:10px; padding:12px; font-size:.85rem; margin-top:10px;}
+  .ok-box{background:var(--ambos-soft); color:var(--ambos); border-radius:10px; padding:12px; font-size:.85rem; margin-top:10px;}
+  .hidden{display:none !important;}
+  h2{font-size:1.05rem; margin:4px 0 12px;}
+  .totline{display:flex; justify-content:space-between; font-size:.9rem; padding:3px 0;}
+  .totline strong{font-size:1rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:1.5rem">🧾</span>
+  <div style="flex:1">
+    <h1 id="header-title">Tickets Súper</h1>
+    <div class="sub" id="header-sub">Jito &amp; Larita</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ VISTA: SESIÓN ACTIVA ============ -->
+  <section id="view-session" class="view active">
+    <div id="session-empty" class="card center hidden">
+      <p style="font-size:2.5rem; margin:6px 0">🛒</p>
+      <p><strong>No hay ninguna sesión abierta</strong></p>
+      <p class="muted">Crea una sesión (por ejemplo, la del mes) y ve añadiendo los tickets del súper.</p>
+      <button class="btn-primary" onclick="newSessionDialog()">➕ Nueva sesión</button>
+    </div>
+
+    <div id="session-active" class="hidden">
+      <div id="balance-banner" class="balance even">
+        <div class="muted" id="session-name-label" style="color:inherit;opacity:.8"></div>
+        <div class="amount" id="balance-amount">0,00 €</div>
+        <div id="balance-text" style="font-weight:600"></div>
+      </div>
+
+      <div class="card">
+        <h2>Tickets <span class="muted" id="ticket-count"></span></h2>
+        <div id="ticket-list"></div>
+        <p class="muted center" id="no-tickets-msg">Aún no hay tickets. Pulsa 📷 para escanear el primero.</p>
+      </div>
+
+      <button class="btn-danger-soft" onclick="closeSessionDialog()">🔒 Cerrar sesión / evento</button>
+    </div>
+  </section>
+
+  <!-- ============ VISTA: REVISAR TICKET ============ -->
+  <section id="view-review" class="view">
+    <div class="card">
+      <div class="row" style="align-items:center; margin-bottom:8px;">
+        <div>
+          <label style="margin-top:0">Tienda</label>
+          <input type="text" id="rv-store">
+        </div>
+        <div style="max-width:130px">
+          <label style="margin-top:0">Fecha</label>
+          <input type="text" id="rv-date" placeholder="dd/mm">
+        </div>
+      </div>
+      <label>Pagado por</label>
+      <div class="payer-select" style="margin-top:4px">
+        <button class="p-jito" id="rv-payer-jito" onclick="setReviewPayer('jito')">Jito</button>
+        <button class="p-larita" id="rv-payer-larita" onclick="setReviewPayer('larita')">Larita</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Artículos — ¿de quién es cada cosa?</h2>
+      <p class="muted" style="margin-top:-6px">J = Jito · A = Ambos (a medias) · L = Larita. Toca el nombre o el precio para editarlos.</p>
+      <div class="quick-assign">
+        <span class="muted" style="align-self:center">Todos:</span>
+        <button class="qa-jito" onclick="assignAll('jito')">Jito</button>
+        <button class="qa-ambos" onclick="assignAll('ambos')">Ambos</button>
+        <button class="qa-larita" onclick="assignAll('larita')">Larita</button>
+      </div>
+      <div id="rv-items"></div>
+      <button class="btn-secondary btn-small" style="margin-top:12px" onclick="addManualItem()">➕ Añadir artículo</button>
+    </div>
+
+    <div class="review-summary">
+      <div id="rv-summary"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn-secondary" onclick="discardReview()">Descartar</button>
+        <button class="btn-primary" id="rv-save-btn" onclick="saveReview()">💾 Guardar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VISTA: HISTORIAL ============ -->
+  <section id="view-history" class="view">
+    <div class="card">
+      <h2>Sesiones cerradas</h2>
+      <div id="history-list"></div>
+      <p class="muted center hidden" id="no-history-msg">Todavía no has cerrado ninguna sesión.</p>
+    </div>
+    <div id="history-detail" class="hidden"></div>
+  </section>
+
+  <!-- ============ VISTA: AJUSTES ============ -->
+  <section id="view-settings" class="view">
+    <div class="card">
+      <h2>Conexión con Claude (IA)</h2>
+      <p class="muted">La foto del ticket se envía a la API de Claude para leer los artículos y precios. Necesitas una API key de <strong>console.anthropic.com</strong>. Se guarda solo en este móvil.</p>
+      <label>API key</label>
+      <div class="row">
+        <input type="password" id="set-apikey" placeholder="sk-ant-...">
+        <button class="btn-secondary btn-small" style="flex:0 0 auto" onclick="toggleKeyVisibility()">👁</button>
+      </div>
+      <label>Modelo</label>
+      <select id="set-model">
+        <option value="claude-opus-4-8">Opus 4.8 — máxima precisión (~4 cts/ticket)</option>
+        <option value="claude-sonnet-5">Sonnet 5 — equilibrado (~2 cts/ticket)</option>
+        <option value="claude-haiku-4-5">Haiku 4.5 — barato y rápido (&lt;1 ct/ticket)</option>
+      </select>
+      <div style="margin-top:14px" class="row">
+        <button class="btn-primary" onclick="saveSettings()">Guardar</button>
+        <button class="btn-secondary" onclick="testConnection()">Probar conexión</button>
+      </div>
+      <div id="settings-msg"></div>
+    </div>
+    <div class="card">
+      <h2>Datos</h2>
+      <p class="muted">Todo se guarda en este móvil (no hay servidor). Puedes hacer una copia de seguridad exportando los datos.</p>
+      <div class="row">
+        <button class="btn-secondary" onclick="exportData()">⬇ Exportar</button>
+        <button class="btn-secondary" onclick="document.getElementById('import-file').click()">⬆ Importar</button>
+      </div>
+      <input type="file" id="import-file" accept="application/json" class="hidden" onchange="importData(this)">
+    </div>
+  </section>
+
+</main>
+
+<!-- FAB escanear -->
+<button class="fab hidden" id="fab-scan" onclick="openScanModal()">📷</button>
+
+<!-- Nav inferior -->
+<nav>
+  <button id="nav-session" class="active" onclick="showView('session')"><span class="ico">🧾</span>Sesión</button>
+  <button id="nav-history" onclick="showView('history')"><span class="ico">📚</span>Historial</button>
+  <button id="nav-settings" onclick="showView('settings')"><span class="ico">⚙️</span>Ajustes</button>
+</nav>
+
+<!-- ============ MODAL: ESCANEAR ============ -->
+<div class="modal-bg" id="scan-modal">
+  <div class="modal">
+    <h3>Escanear ticket</h3>
+    <div id="scan-step-payer">
+      <p class="muted">¿Quién ha pagado este ticket?</p>
+      <div class="payer-select">
+        <button class="p-jito" onclick="scanChoosePayer('jito')">Jito</button>
+        <button class="p-larita" onclick="scanChoosePayer('larita')">Larita</button>
+      </div>
+      <button class="btn-secondary" style="margin-top:14px" onclick="closeScanModal()">Cancelar</button>
+    </div>
+    <div id="scan-step-photo" class="hidden">
+      <p class="muted">Pagado por <strong id="scan-payer-label"></strong>. Haz la foto del ticket entero, bien iluminado y sin arrugas.</p>
+      <img id="preview" class="hidden" alt="Vista previa del ticket">
+      <div class="row">
+        <button class="btn-primary" id="scan-take-btn" onclick="document.getElementById('camera-input').click()">📷 Hacer foto</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn-secondary" onclick="closeScanModal()">Cancelar</button>
+        <button class="btn-primary hidden" id="scan-process-btn" onclick="processTicket()">🔍 Analizar</button>
+      </div>
+      <div id="scan-status"></div>
+    </div>
+    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="photoSelected(this)">
+  </div>
+</div>
+
+<!-- ============ MODAL: EDITAR ARTÍCULO ============ -->
+<div class="modal-bg" id="edit-modal">
+  <div class="modal">
+    <h3>Editar artículo</h3>
+    <label>Nombre</label>
+    <input type="text" id="edit-name">
+    <label>Precio (€) — usa negativo para descuentos</label>
+    <input type="number" id="edit-price" step="0.01" inputmode="decimal">
+    <p class="muted" id="edit-orig"></p>
+    <div class="row" style="margin-top:14px">
+      <button class="btn-danger-soft" onclick="deleteEditItem()">🗑 Borrar</button>
+      <button class="btn-primary" onclick="saveEditItem()">Guardar</button>
+    </div>
+    <button class="btn-secondary" style="width:100%; margin-top:10px" onclick="closeEditModal()">Cancelar</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Tickets Súper — Jito & Larita
+   PWA para repartir gastos del supermercado.
+   ============================================================ */
+
+const STORAGE_KEY = 'ticketsSuperApp_v1';
+const NAMES = { jito: 'Jito', larita: 'Larita' };
+
+let state = loadState();
+let currentView = 'session';
+let scanPayer = null;
+let scanImageB64 = null;       // base64 sin prefijo data:
+let reviewTicket = null;       // ticket en edición (borrador o existente)
+let reviewIsNew = false;
+let editItemIndex = -1;
+
+/* ---------- persistencia ---------- */
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return { sessions: [], activeSessionId: null, settings: { apiKey:'', model:'claude-opus-4-8' } };
+}
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function activeSession(){ return state.sessions.find(s => s.id === state.activeSessionId) || null; }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ---------- utilidades ---------- */
+function fmt(n){
+  return (Math.round(n*100)/100).toLocaleString('es-ES',{style:'currency',currency:'EUR'});
+}
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* Balance de un ticket: cuánto debe el que NO pagó al que pagó. */
+function ticketOwed(t){
+  let owed = 0;
+  for(const it of t.items){
+    if(it.assign === 'ambos') owed += it.price/2;
+    else if(it.assign !== t.payer) owed += it.price; // es del otro entero
+  }
+  return owed;
+}
+/* Balance neto de una sesión: >0 → Larita debe a Jito; <0 → Jito debe a Larita */
+function sessionNet(s){
+  let net = 0;
+  for(const t of s.tickets){
+    const owed = ticketOwed(t);
+    net += (t.payer === 'jito') ? owed : -owed;
+  }
+  return Math.round(net*100)/100;
+}
+function netText(net){
+  if(Math.abs(net) < 0.005) return { cls:'even', amount:fmt(0), text:'Estáis en paz 🤝' };
+  if(net > 0) return { cls:'owes-jito', amount:fmt(net), text:'Larita debe esto a Jito' };
+  return { cls:'owes-larita', amount:fmt(-net), text:'Jito debe esto a Larita' };
+}
+
+/* ---------- navegación ---------- */
+function showView(v){
+  currentView = v;
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+  const nav = document.getElementById('nav-'+v);
+  if(nav) nav.classList.add('active');
+  document.getElementById('fab-scan').classList.toggle('hidden', !(v==='session' && activeSession()));
+  if(v==='session') renderSession();
+  if(v==='history') renderHistory();
+  if(v==='settings') renderSettings();
+  window.scrollTo(0,0);
+}
+
+/* ---------- sesión ---------- */
+function renderSession(){
+  const s = activeSession();
+  document.getElementById('session-empty').classList.toggle('hidden', !!s);
+  document.getElementById('session-active').classList.toggle('hidden', !s);
+  document.getElementById('fab-scan').classList.toggle('hidden', !(currentView==='session' && s));
+  if(!s){ document.getElementById('header-sub').textContent = 'Jito & Larita'; return; }
+
+  document.getElementById('header-sub').textContent = s.name;
+  document.getElementById('session-name-label').textContent = s.name;
+
+  const net = sessionNet(s);
+  const nt = netText(net);
+  const banner = document.getElementById('balance-banner');
+  banner.className = 'balance ' + nt.cls;
+  document.getElementById('balance-amount').textContent = nt.amount;
+  document.getElementById('balance-text').textContent = nt.text;
+
+  const list = document.getElementById('ticket-list');
+  document.getElementById('ticket-count').textContent = s.tickets.length ? '('+s.tickets.length+')' : '';
+  document.getElementById('no-tickets-msg').classList.toggle('hidden', s.tickets.length>0);
+  list.innerHTML = s.tickets.map((t,i) => {
+    const owed = ticketOwed(t);
+    const other = t.payer==='jito' ? 'Larita' : 'Jito';
+    return `<div class="ticket-item" onclick="openTicket(${i})">
+      <div class="info">
+        <div class="store">${esc(t.store||'Súper')} <span class="payer-chip ${t.payer}">pagó ${NAMES[t.payer]}</span></div>
+        <div class="meta">${esc(t.date||'')} · ${t.items.length} artículos · total ${fmt(t.items.reduce((a,b)=>a+b.price,0))}</div>
+      </div>
+      <div class="bal">${other} debe<br>${fmt(owed)}</div>
+    </div>`;
+  }).join('');
+}
+
+function newSessionDialog(){
+  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const d = new Date();
+  const suggestion = months[d.getMonth()].charAt(0).toUpperCase()+months[d.getMonth()].slice(1)+' '+d.getFullYear();
+  const name = prompt('Nombre de la sesión/evento:', suggestion);
+  if(name === null) return;
+  const s = { id: uid(), name: name.trim() || suggestion, createdAt: new Date().toISOString(), closedAt: null, tickets: [] };
+  state.sessions.push(s);
+  state.activeSessionId = s.id;
+  saveState();
+  renderSession();
+}
+
+function closeSessionDialog(){
+  const s = activeSession();
+  if(!s) return;
+  const net = sessionNet(s);
+  const nt = netText(net);
+  if(!confirm(`Cerrar "${s.name}"?\n\nResultado final: ${nt.amount} — ${nt.text}\n\nQuedará guardada en el historial y podrás empezar otra.`)) return;
+  s.closedAt = new Date().toISOString();
+  s.finalNet = net;
+  state.activeSessionId = null;
+  saveState();
+  renderSession();
+}
+
+/* ---------- escanear ---------- */
+function openScanModal(){
+  if(!state.settings.apiKey){
+    alert('Primero configura tu API key de Claude en Ajustes ⚙️');
+    showView('settings');
+    return;
+  }
+  scanPayer = null; scanImageB64 = null;
+  document.getElementById('scan-step-payer').classList.remove('hidden');
+  document.getElementById('scan-step-photo').classList.add('hidden');
+  document.getElementById('preview').classList.add('hidden');
+  document.getElementById('scan-process-btn').classList.add('hidden');
+  document.getElementById('scan-status').innerHTML = '';
+  document.getElementById('camera-input').value = '';
+  document.getElementById('scan-modal').classList.add('open');
+}
+function closeScanModal(){ document.getElementById('scan-modal').classList.remove('open'); }
+function scanChoosePayer(p){
+  scanPayer = p;
+  document.getElementById('scan-payer-label').textContent = NAMES[p];
+  document.getElementById('scan-step-payer').classList.add('hidden');
+  document.getElementById('scan-step-photo').classList.remove('hidden');
+  document.getElementById('camera-input').click();
+}
+
+function photoSelected(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    // Reescalar: lado largo máx 2400 px (equilibrio legibilidad/coste)
+    const MAX = 2400;
+    let w = img.naturalWidth, h = img.naturalHeight;
+    const scale = Math.min(1, MAX/Math.max(w,h));
+    w = Math.round(w*scale); h = Math.round(h*scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+    scanImageB64 = dataUrl.split(',')[1];
+    const prev = document.getElementById('preview');
+    prev.src = dataUrl;
+    prev.classList.remove('hidden');
+    document.getElementById('scan-process-btn').classList.remove('hidden');
+    document.getElementById('scan-take-btn').textContent = '🔁 Repetir foto';
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+}
+
+async function processTicket(){
+  const status = document.getElementById('scan-status');
+  const btn = document.getElementById('scan-process-btn');
+  btn.disabled = true;
+  status.innerHTML = '<div class="spinner"></div><p class="muted center">Leyendo el ticket con IA…</p>';
+  try{
+    const data = await callClaudeOCR(scanImageB64);
+    reviewTicket = {
+      id: uid(),
+      date: data.fecha || new Date().toLocaleDateString('es-ES'),
+      store: data.tienda || 'Súper',
+      payer: scanPayer,
+      items: (data.articulos||[]).map(a => ({
+        name: a.nombre, orig: a.texto_original || '', price: Math.round(a.precio*100)/100, assign: 'ambos'
+      }))
+    };
+    reviewIsNew = true;
+    btn.disabled = false;
+    closeScanModal();
+    openReview();
+  }catch(err){
+    btn.disabled = false;
+    status.innerHTML = '<div class="error-box">⚠️ '+esc(err.message)+'</div>';
+  }
+}
+
+/* ---------- llamada a la API de Claude ---------- */
+async function callClaudeOCR(imageB64){
+  const schema = {
+    type: 'object',
+    properties: {
+      tienda: { type:'string', description:'Nombre del supermercado (Mercadona, Lidl, Gadis, Familia, etc.)' },
+      fecha:  { type:'string', description:'Fecha del ticket en formato dd/mm/aaaa, o cadena vacía si no aparece' },
+      articulos: {
+        type:'array',
+        items: {
+          type:'object',
+          properties: {
+            nombre: { type:'string', description:'Nombre del producto interpretado y legible en español' },
+            texto_original: { type:'string', description:'Texto literal de la línea tal y como aparece en el ticket' },
+            precio: { type:'number', description:'Importe total de la línea en euros; negativo si es un descuento' }
+          },
+          required: ['nombre','texto_original','precio'],
+          additionalProperties: false
+        }
+      },
+      total: { type:'number', description:'Total del ticket en euros' }
+    },
+    required: ['tienda','fecha','articulos','total'],
+    additionalProperties: false
+  };
+
+  const prompt = `Extrae los artículos de esta foto de un ticket de supermercado español (puede ser Mercadona, Lidl, Gadis, Familia u otros).
+
+Reglas:
+- Una entrada por línea de artículo, con su importe FINAL en euros (si la línea es "2 x 1,50 3,00", el precio es 3,00).
+- Muchos tickets usan abreviaturas o códigos internos crípticos: interpreta el nombre más probable del producto en español legible (p. ej. "LTE ENT B.1L" → "Leche entera brik 1L"). Si no puedes descifrarlo, deja el texto tal cual.
+- Guarda siempre en texto_original la línea literal del ticket.
+- Incluye los descuentos/cupones como artículos con precio negativo.
+- NO incluyas subtotales, el total, la línea de IVA ni el cambio/entregado.
+- Comprueba que la suma de los artículos cuadre aproximadamente con el total del ticket.`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': state.settings.apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: state.settings.model,
+      max_tokens: 8192,
+      output_config: { format: { type:'json_schema', schema } },
+      messages: [{
+        role:'user',
+        content: [
+          { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:imageB64 } },
+          { type:'text', text: prompt }
+        ]
+      }]
+    })
+  });
+
+  if(!res.ok){
+    let msg = 'Error '+res.status;
+    try{ const e = await res.json(); msg = e.error?.message || msg; }catch(_){}
+    if(res.status===401) msg = 'API key incorrecta o caducada. Revísala en Ajustes.';
+    if(res.status===429) msg = 'Demasiadas peticiones seguidas, espera un momento y reintenta.';
+    if(res.status===529) msg = 'La API está saturada ahora mismo, reintenta en unos segundos.';
+    throw new Error(msg);
+  }
+  const body = await res.json();
+  if(body.stop_reason === 'refusal') throw new Error('La IA ha rechazado procesar esta imagen. Prueba con otra foto.');
+  const textBlock = (body.content||[]).find(b => b.type==='text');
+  if(!textBlock) throw new Error('Respuesta inesperada de la API.');
+  let data;
+  try{ data = JSON.parse(textBlock.text); }
+  catch(e){ throw new Error('No se pudo interpretar la respuesta de la IA.'); }
+  if(!data.articulos || !data.articulos.length) throw new Error('No se han encontrado artículos en la foto. Prueba con una foto más nítida del ticket completo.');
+  return data;
+}
+
+/* ---------- revisar ticket ---------- */
+function openTicket(index){
+  const s = activeSession();
+  if(!s) return;
+  reviewTicket = JSON.parse(JSON.stringify(s.tickets[index]));
+  reviewTicket._index = index;
+  reviewIsNew = false;
+  openReview();
+}
+function openReview(){
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-review').classList.add('active');
+  document.getElementById('fab-scan').classList.add('hidden');
+  document.getElementById('rv-store').value = reviewTicket.store || '';
+  document.getElementById('rv-date').value = reviewTicket.date || '';
+  setReviewPayer(reviewTicket.payer);
+  renderReviewItems();
+  window.scrollTo(0,0);
+}
+function setReviewPayer(p){
+  reviewTicket.payer = p;
+  document.getElementById('rv-payer-jito').classList.toggle('sel', p==='jito');
+  document.getElementById('rv-payer-larita').classList.toggle('sel', p==='larita');
+  renderReviewSummary();
+}
+function renderReviewItems(){
+  const cont = document.getElementById('rv-items');
+  cont.innerHTML = reviewTicket.items.map((it,i) => `
+    <div class="item-row">
+      <div class="iname" onclick="openEditModal(${i})">
+        <div class="n">${esc(it.name)}</div>
+        ${it.orig && it.orig !== it.name ? `<div class="orig">${esc(it.orig)}</div>` : ''}
+      </div>
+      <div class="iprice" onclick="openEditModal(${i})">${fmt(it.price)}</div>
+      <div class="seg">
+        <button class="${it.assign==='jito'?'sel-jito':''}" onclick="setAssign(${i},'jito')">J</button>
+        <button class="${it.assign==='ambos'?'sel-ambos':''}" onclick="setAssign(${i},'ambos')">A</button>
+        <button class="${it.assign==='larita'?'sel-larita':''}" onclick="setAssign(${i},'larita')">L</button>
+      </div>
+    </div>`).join('');
+  renderReviewSummary();
+}
+function setAssign(i, who){
+  reviewTicket.items[i].assign = who;
+  renderReviewItems();
+}
+function assignAll(who){
+  reviewTicket.items.forEach(it => it.assign = who);
+  renderReviewItems();
+}
+function renderReviewSummary(){
+  const t = reviewTicket;
+  const total = t.items.reduce((a,b)=>a+b.price,0);
+  const sumJito = t.items.filter(i=>i.assign==='jito').reduce((a,b)=>a+b.price,0);
+  const sumLarita = t.items.filter(i=>i.assign==='larita').reduce((a,b)=>a+b.price,0);
+  const sumAmbos = t.items.filter(i=>i.assign==='ambos').reduce((a,b)=>a+b.price,0);
+  const owed = ticketOwed(t);
+  const other = t.payer==='jito' ? 'Larita' : 'Jito';
+  const payer = NAMES[t.payer];
+  document.getElementById('rv-summary').innerHTML = `
+    <div class="totline"><span>Total ticket</span><span>${fmt(total)}</span></div>
+    <div class="totline"><span>Solo Jito</span><span>${fmt(sumJito)}</span></div>
+    <div class="totline"><span>Ambos (a medias)</span><span>${fmt(sumAmbos)} → ${fmt(sumAmbos/2)} cada uno</span></div>
+    <div class="totline"><span>Solo Larita</span><span>${fmt(sumLarita)}</span></div>
+    <div class="totline" style="border-top:1px solid var(--border); padding-top:6px; margin-top:4px">
+      <strong>${other} debe a ${payer}</strong><strong>${fmt(owed)}</strong>
+    </div>`;
+}
+function addManualItem(){
+  reviewTicket.items.push({ name:'Artículo', orig:'', price:0, assign:'ambos' });
+  renderReviewItems();
+  openEditModal(reviewTicket.items.length-1);
+}
+function saveReview(){
+  reviewTicket.store = document.getElementById('rv-store').value.trim() || 'Súper';
+  reviewTicket.date = document.getElementById('rv-date').value.trim();
+  const s = activeSession();
+  if(!s){ alert('No hay sesión activa.'); return; }
+  if(reviewIsNew){
+    const t = JSON.parse(JSON.stringify(reviewTicket));
+    delete t._index;
+    s.tickets.push(t);
+  }else{
+    const idx = reviewTicket._index;
+    const t = JSON.parse(JSON.stringify(reviewTicket));
+    delete t._index;
+    s.tickets[idx] = t;
+  }
+  saveState();
+  reviewTicket = null;
+  showView('session');
+}
+function discardReview(){
+  if(reviewIsNew){
+    if(!confirm('¿Descartar este ticket? Se perderá lo escaneado.')) return;
+  }else{
+    // ofrecer borrar el ticket existente
+    if(confirm('¿Quieres BORRAR este ticket de la sesión?\n(Cancelar = volver sin guardar cambios)')){
+      const s = activeSession();
+      s.tickets.splice(reviewTicket._index, 1);
+      saveState();
+    }
+  }
+  reviewTicket = null;
+  showView('session');
+}
+
+/* ---------- modal edición artículo ---------- */
+function openEditModal(i){
+  editItemIndex = i;
+  const it = reviewTicket.items[i];
+  document.getElementById('edit-name').value = it.name;
+  document.getElementById('edit-price').value = it.price;
+  document.getElementById('edit-orig').textContent = it.orig ? 'Texto del ticket: '+it.orig : '';
+  document.getElementById('edit-modal').classList.add('open');
+}
+function closeEditModal(){ document.getElementById('edit-modal').classList.remove('open'); }
+function saveEditItem(){
+  const it = reviewTicket.items[editItemIndex];
+  it.name = document.getElementById('edit-name').value.trim() || it.name;
+  const p = parseFloat(String(document.getElementById('edit-price').value).replace(',','.'));
+  if(!isNaN(p)) it.price = Math.round(p*100)/100;
+  closeEditModal();
+  renderReviewItems();
+}
+function deleteEditItem(){
+  reviewTicket.items.splice(editItemIndex,1);
+  closeEditModal();
+  renderReviewItems();
+}
+
+/* ---------- historial ---------- */
+function renderHistory(){
+  const closed = state.sessions.filter(s => s.closedAt).sort((a,b)=> b.closedAt.localeCompare(a.closedAt));
+  document.getElementById('no-history-msg').classList.toggle('hidden', closed.length>0);
+  document.getElementById('history-detail').classList.add('hidden');
+  document.getElementById('history-detail').innerHTML = '';
+  document.getElementById('history-list').innerHTML = closed.map(s => {
+    const net = s.finalNet !== undefined ? s.finalNet : sessionNet(s);
+    const nt = netText(net);
+    return `<div class="hist-item" onclick="showHistoryDetail('${s.id}')">
+      <div class="name">${esc(s.name)}</div>
+      <div class="meta">${s.tickets.length} tickets · cerrada el ${new Date(s.closedAt).toLocaleDateString('es-ES')}</div>
+      <div class="final">${nt.amount} — ${nt.text}</div>
+    </div>`;
+  }).join('');
+}
+function showHistoryDetail(id){
+  const s = state.sessions.find(x=>x.id===id);
+  if(!s) return;
+  const net = s.finalNet !== undefined ? s.finalNet : sessionNet(s);
+  const nt = netText(net);
+  const detail = document.getElementById('history-detail');
+  detail.classList.remove('hidden');
+  detail.innerHTML = `
+    <div class="balance ${nt.cls}">
+      <div style="opacity:.8">${esc(s.name)}</div>
+      <div class="amount">${nt.amount}</div>
+      <div style="font-weight:600">${nt.text}</div>
+    </div>
+    <div class="card">
+      <h2>Tickets</h2>
+      ${s.tickets.map(t => {
+        const owed = ticketOwed(t);
+        const other = t.payer==='jito' ? 'Larita' : 'Jito';
+        return `<div class="ticket-item" style="cursor:default">
+          <div class="info">
+            <div class="store">${esc(t.store)} <span class="payer-chip ${t.payer}">pagó ${NAMES[t.payer]}</span></div>
+            <div class="meta">${esc(t.date||'')} · ${t.items.length} artículos · total ${fmt(t.items.reduce((a,b)=>a+b.price,0))}</div>
+          </div>
+          <div class="bal">${other} debía<br>${fmt(owed)}</div>
+        </div>`;
+      }).join('') || '<p class="muted">Sin tickets.</p>'}
+      <button class="btn-danger-soft" style="margin-top:12px" onclick="deleteSession('${s.id}')">🗑 Borrar esta sesión</button>
+    </div>`;
+  detail.scrollIntoView({behavior:'smooth'});
+}
+function deleteSession(id){
+  if(!confirm('¿Borrar esta sesión y todos sus tickets? No se puede deshacer.')) return;
+  state.sessions = state.sessions.filter(s=>s.id!==id);
+  saveState();
+  renderHistory();
+}
+
+/* ---------- ajustes ---------- */
+function renderSettings(){
+  document.getElementById('set-apikey').value = state.settings.apiKey || '';
+  document.getElementById('set-model').value = state.settings.model || 'claude-opus-4-8';
+  document.getElementById('settings-msg').innerHTML = '';
+}
+function toggleKeyVisibility(){
+  const el = document.getElementById('set-apikey');
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+function saveSettings(){
+  state.settings.apiKey = document.getElementById('set-apikey').value.trim();
+  state.settings.model = document.getElementById('set-model').value;
+  saveState();
+  document.getElementById('settings-msg').innerHTML = '<div class="ok-box">✅ Guardado.</div>';
+}
+async function testConnection(){
+  saveSettings();
+  const msg = document.getElementById('settings-msg');
+  if(!state.settings.apiKey){ msg.innerHTML = '<div class="error-box">Introduce primero la API key.</div>'; return; }
+  msg.innerHTML = '<div class="spinner"></div>';
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'content-type':'application/json',
+        'x-api-key': state.settings.apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({ model: state.settings.model, max_tokens: 5, messages:[{role:'user',content:'Di "ok"'}] })
+    });
+    if(res.ok) msg.innerHTML = '<div class="ok-box">✅ Conexión correcta con '+esc(state.settings.model)+'.</div>';
+    else{
+      let m = 'Error '+res.status;
+      try{ const e = await res.json(); m = e.error?.message || m; }catch(_){}
+      if(res.status===401) m = 'API key incorrecta.';
+      msg.innerHTML = '<div class="error-box">⚠️ '+esc(m)+'</div>';
+    }
+  }catch(e){
+    msg.innerHTML = '<div class="error-box">⚠️ Sin conexión: '+esc(e.message)+'</div>';
+  }
+}
+
+/* ---------- exportar / importar ---------- */
+function exportData(){
+  const data = JSON.parse(JSON.stringify(state));
+  delete data.settings.apiKey; // no exportar la clave
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tickets-super-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function importData(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      if(!Array.isArray(data.sessions)) throw new Error('formato no válido');
+      if(!confirm('Esto sustituirá las sesiones actuales por las del fichero (' + data.sessions.length + ' sesiones). ¿Continuar?')) return;
+      const apiKey = state.settings.apiKey;
+      const model = state.settings.model;
+      state = data;
+      state.settings = state.settings || {};
+      state.settings.apiKey = apiKey;
+      state.settings.model = state.settings.model || model;
+      saveState();
+      showView('session');
+      alert('Datos importados ✅');
+    }catch(e){
+      alert('No se pudo importar: '+e.message);
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+/* ---------- arranque ---------- */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+showView('session');
+</script>
+</body>
+</html>

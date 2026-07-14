@@ -1,0 +1,26 @@
+{
+  "name": "Tickets Súper — Jito & Larita",
+  "short_name": "Tickets Súper",
+  "description": "Escanea tickets del supermercado y reparte los gastos entre Jito y Larita",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f6f5",
+  "theme_color": "#1a7f4e",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
