@@ -188,6 +188,8 @@
     <h1 id="header-title">Tickets Súper</h1>
     <div class="sub" id="header-sub">Jito &amp; Larita</div>
   </div>
+  <button id="sync-btn" class="hidden" onclick="syncNow(true)" title="Sincronizar ahora"
+    style="background:none;color:#fff;font-size:1.35rem;padding:6px 8px;line-height:1">☁️</button>
 </header>
 
 <main>
@@ -293,6 +295,22 @@
       <div id="settings-msg"></div>
     </div>
     <div class="card">
+      <h2>Sincronización entre móviles</h2>
+      <p class="muted">Con esto configurado en los dos móviles, los tickets que suba uno le aparecen al otro. Los datos se guardan en un repositorio <strong>privado</strong> de GitHub. Necesitas un token de GitHub con permiso de lectura/escritura sobre ese repositorio (mismo token en ambos móviles).</p>
+      <label>Token de GitHub</label>
+      <div class="row">
+        <input type="password" id="set-synctoken" placeholder="github_pat_...">
+        <button class="btn-secondary btn-small" style="flex:0 0 auto" onclick="toggleSyncTokenVisibility()">👁</button>
+      </div>
+      <label>Repositorio de datos</label>
+      <input type="text" id="set-syncrepo" placeholder="usuario/tickets-data">
+      <div style="margin-top:14px" class="row">
+        <button class="btn-primary" onclick="saveSyncSettings()">Guardar</button>
+        <button class="btn-secondary" onclick="syncNow(true)">🔄 Sincronizar ahora</button>
+      </div>
+      <div id="sync-msg"></div>
+    </div>
+    <div class="card">
       <h2>Datos</h2>
       <p class="muted">Todo se guarda en este móvil (no hay servidor). Puedes hacer una copia de seguridad exportando los datos.</p>
       <div class="row">
@@ -379,13 +397,30 @@ let editItemIndex = -1;
 
 /* ---------- persistencia ---------- */
 function loadState(){
+  let s = null;
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw) return JSON.parse(raw);
+    if(raw) s = JSON.parse(raw);
   }catch(e){}
-  return { sessions: [], activeSessionId: null, settings: { apiKey:'', model:'claude-opus-4-8' } };
+  if(!s) s = { sessions: [], activeSessionId: null, settings: { apiKey:'', model:'claude-opus-4-8' } };
+  // normalizar campos añadidos en versiones posteriores
+  s.settings = s.settings || {};
+  s.settings.model = s.settings.model || 'claude-opus-4-8';
+  s.settings.sync = s.settings.sync || { token:'', repo:'' };
+  s.deleted = s.deleted || { sessions: [], tickets: [] };
+  for(const ses of s.sessions){
+    ses.updatedAt = ses.updatedAt || ses.createdAt || new Date().toISOString();
+    for(const t of (ses.tickets||[])) t.updatedAt = t.updatedAt || ses.updatedAt;
+  }
+  return s;
 }
-function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveLocalOnly(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveState(){ saveLocalOnly(); scheduleSync(); }
+function touch(session, ticket){
+  const now = new Date().toISOString();
+  if(session) session.updatedAt = now;
+  if(ticket) ticket.updatedAt = now;
+}
 function activeSession(){ return state.sessions.find(s => s.id === state.activeSessionId) || null; }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
@@ -476,7 +511,7 @@ function newSessionDialog(){
   const suggestion = months[d.getMonth()].charAt(0).toUpperCase()+months[d.getMonth()].slice(1)+' '+d.getFullYear();
   const name = prompt('Nombre de la sesión/evento:', suggestion);
   if(name === null) return;
-  const s = { id: uid(), name: name.trim() || suggestion, createdAt: new Date().toISOString(), closedAt: null, tickets: [] };
+  const s = { id: uid(), name: name.trim() || suggestion, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), closedAt: null, tickets: [] };
   state.sessions.push(s);
   state.activeSessionId = s.id;
   saveState();
@@ -491,6 +526,7 @@ function closeSessionDialog(){
   if(!confirm(`Cerrar "${s.name}"?\n\nResultado final: ${nt.amount} — ${nt.text}\n\nQuedará guardada en el historial y podrás empezar otra.`)) return;
   s.closedAt = new Date().toISOString();
   s.finalNet = net;
+  touch(s);
   state.activeSessionId = null;
   saveState();
   renderSession();
@@ -731,11 +767,13 @@ function saveReview(){
   if(reviewIsNew){
     const t = JSON.parse(JSON.stringify(reviewTicket));
     delete t._index;
+    touch(s, t);
     s.tickets.push(t);
   }else{
     const idx = reviewTicket._index;
     const t = JSON.parse(JSON.stringify(reviewTicket));
     delete t._index;
+    touch(s, t);
     s.tickets[idx] = t;
   }
   saveState();
@@ -749,7 +787,9 @@ function discardReview(){
     // ofrecer borrar el ticket existente
     if(confirm('¿Quieres BORRAR este ticket de la sesión?\n(Cancelar = volver sin guardar cambios)')){
       const s = activeSession();
-      s.tickets.splice(reviewTicket._index, 1);
+      const removed = s.tickets.splice(reviewTicket._index, 1);
+      if(removed[0]) state.deleted.tickets.push(removed[0].id);
+      touch(s);
       saveState();
     }
   }
@@ -828,8 +868,9 @@ function showHistoryDetail(id){
   detail.scrollIntoView({behavior:'smooth'});
 }
 function deleteSession(id){
-  if(!confirm('¿Borrar esta sesión y todos sus tickets? No se puede deshacer.')) return;
+  if(!confirm('¿Borrar esta sesión y todos sus tickets? No se puede deshacer (se borrará también en el otro móvil).')) return;
   state.sessions = state.sessions.filter(s=>s.id!==id);
+  state.deleted.sessions.push(id);
   saveState();
   renderHistory();
 }
@@ -839,6 +880,9 @@ function renderSettings(){
   document.getElementById('set-apikey').value = state.settings.apiKey || '';
   document.getElementById('set-model').value = state.settings.model || 'claude-opus-4-8';
   document.getElementById('settings-msg').innerHTML = '';
+  document.getElementById('set-synctoken').value = (state.settings.sync && state.settings.sync.token) || '';
+  document.getElementById('set-syncrepo').value = (state.settings.sync && state.settings.sync.repo) || '';
+  document.getElementById('sync-msg').innerHTML = '';
 }
 function toggleKeyVisibility(){
   const el = document.getElementById('set-apikey');
@@ -881,7 +925,8 @@ async function testConnection(){
 /* ---------- exportar / importar ---------- */
 function exportData(){
   const data = JSON.parse(JSON.stringify(state));
-  delete data.settings.apiKey; // no exportar la clave
+  delete data.settings.apiKey;   // no exportar claves
+  if(data.settings.sync) delete data.settings.sync.token;
   const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -900,10 +945,13 @@ function importData(input){
       if(!confirm('Esto sustituirá las sesiones actuales por las del fichero (' + data.sessions.length + ' sesiones). ¿Continuar?')) return;
       const apiKey = state.settings.apiKey;
       const model = state.settings.model;
+      const sync = state.settings.sync;
       state = data;
       state.settings = state.settings || {};
       state.settings.apiKey = apiKey;
       state.settings.model = state.settings.model || model;
+      state.settings.sync = sync || { token:'', repo:'' };
+      state.deleted = state.deleted || { sessions:[], tickets:[] };
       saveState();
       showView('session');
       alert('Datos importados ✅');
@@ -915,11 +963,167 @@ function importData(input){
   input.value = '';
 }
 
+/* ---------- sincronización (GitHub repo privado) ---------- */
+let syncTimer = null, syncInFlight = false, syncPendingAgain = false;
+
+function syncConfigured(){
+  return !!(state.settings.sync && state.settings.sync.token && state.settings.sync.repo);
+}
+function scheduleSync(){
+  if(!syncConfigured()) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(()=>syncNow(false), 1500);
+}
+function setSyncIcon(mode, title){
+  const btn = document.getElementById('sync-btn');
+  btn.classList.toggle('hidden', !syncConfigured());
+  if(mode==='busy') btn.textContent = '🔄';
+  else if(mode==='error') btn.textContent = '⚠️';
+  else btn.textContent = '☁️';
+  btn.title = title || 'Sincronizar ahora';
+}
+function b64EncodeUtf8(str){
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for(let i=0;i<bytes.length;i+=8192) bin += String.fromCharCode.apply(null, bytes.subarray(i,i+8192));
+  return btoa(bin);
+}
+function b64DecodeUtf8(b64){
+  const bin = atob(b64.replace(/\s/g,''));
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+/* La parte del estado que se comparte entre móviles (ni ajustes ni API keys) */
+function stateCore(){
+  return { sessions: state.sessions, deleted: state.deleted };
+}
+/* Fusión: unión de sesiones y tickets por id; en conflicto gana el más reciente; los borrados no reviven */
+function mergeStates(local, remote){
+  const del = {
+    sessions: [...new Set([...(local.deleted?.sessions||[]), ...(remote.deleted?.sessions||[])])],
+    tickets:  [...new Set([...(local.deleted?.tickets||[]),  ...(remote.deleted?.tickets||[])])]
+  };
+  const byId = new Map();
+  for(const s of (remote.sessions||[])) byId.set(s.id, JSON.parse(JSON.stringify(s)));
+  for(const sl of (local.sessions||[])){
+    const s = JSON.parse(JSON.stringify(sl));
+    if(!byId.has(s.id)){ byId.set(s.id, s); continue; }
+    const r = byId.get(s.id);
+    const newer = (s.updatedAt||'') >= (r.updatedAt||'') ? s : r;
+    const merged = JSON.parse(JSON.stringify(newer));
+    const tmap = new Map();
+    for(const t of (r.tickets||[])) tmap.set(t.id, t);
+    for(const t of (s.tickets||[])){
+      const rt = tmap.get(t.id);
+      if(!rt || (t.updatedAt||'') >= (rt.updatedAt||'')) tmap.set(t.id, t);
+    }
+    merged.tickets = [...tmap.values()];
+    byId.set(s.id, merged);
+  }
+  const sessions = [...byId.values()]
+    .filter(s => !del.sessions.includes(s.id))
+    .map(s => { s.tickets = (s.tickets||[]).filter(t => !del.tickets.includes(t.id)); return s; })
+    .sort((a,b) => (a.createdAt||'').localeCompare(b.createdAt||''));
+  return { sessions, deleted: del };
+}
+function fixActiveSession(){
+  const cur = state.sessions.find(s => s.id === state.activeSessionId && !s.closedAt);
+  if(cur) return;
+  const open = state.sessions.find(s => !s.closedAt);
+  state.activeSessionId = open ? open.id : null;
+}
+async function syncNow(manual, isRetry){
+  if(!syncConfigured()) {
+    if(manual){ const m=document.getElementById('sync-msg'); if(m) m.innerHTML='<div class="error-box">Configura primero el token y el repositorio.</div>'; }
+    return;
+  }
+  if(syncInFlight){ syncPendingAgain = true; return; }
+  syncInFlight = true;
+  setSyncIcon('busy','Sincronizando…');
+  const msgEl = (currentView==='settings') ? document.getElementById('sync-msg') : null;
+  try{
+    const repo = state.settings.sync.repo.trim().replace(/^https:\/\/github\.com\//,'').replace(/\/$/,'');
+    const headers = {
+      'Authorization': 'Bearer ' + state.settings.sync.token.trim(),
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    };
+    const url = 'https://api.github.com/repos/' + repo + '/contents/data.json';
+    let sha = null, remote = null, remoteRaw = null;
+    const res = await fetch(url + '?nocache=' + Date.now(), { headers });
+    if(res.status === 200){
+      const j = await res.json();
+      sha = j.sha;
+      remoteRaw = b64DecodeUtf8(j.content);
+      remote = JSON.parse(remoteRaw);
+    }else if(res.status === 401){ throw new Error('Token no válido o caducado.');
+    }else if(res.status === 403){ throw new Error('El token no tiene permiso sobre ese repositorio.');
+    }else if(res.status !== 404){ throw new Error('GitHub respondió ' + res.status + '. Revisa el nombre del repositorio.'); }
+    // 404 = el fichero aún no existe: primera sincronización
+
+    const merged = remote ? mergeStates(stateCore(), remote) : { sessions: state.sessions, deleted: state.deleted };
+    state.sessions = merged.sessions;
+    state.deleted = merged.deleted;
+    fixActiveSession();
+    saveLocalOnly();
+
+    const payload = JSON.stringify(merged);
+    if(payload !== remoteRaw){
+      const put = await fetch(url, {
+        method: 'PUT', headers,
+        body: JSON.stringify({
+          message: 'sync ' + new Date().toISOString(),
+          content: b64EncodeUtf8(payload),
+          sha: sha || undefined
+        })
+      });
+      if(put.status === 409 || put.status === 422){
+        // otro móvil escribió a la vez: reintentar una vez con los datos frescos
+        if(!isRetry){ syncInFlight = false; return syncNow(manual, true); }
+        throw new Error('Conflicto de escritura, reintenta en unos segundos.');
+      }
+      if(!put.ok) throw new Error('No se pudo guardar en GitHub (' + put.status + ').');
+    }
+    setSyncIcon('ok','Sincronizado ✓ (toca para forzar)');
+    if(msgEl) msgEl.innerHTML = '<div class="ok-box">✅ Sincronizado correctamente.</div>';
+    if(currentView==='session') renderSession();
+    if(currentView==='history') renderHistory();
+  }catch(err){
+    setSyncIcon('error','Error de sincronización: ' + err.message + ' (toca para reintentar)');
+    if(msgEl) msgEl.innerHTML = '<div class="error-box">⚠️ ' + esc(err.message) + '</div>';
+  }finally{
+    syncInFlight = false;
+    if(syncPendingAgain){ syncPendingAgain = false; scheduleSync(); }
+  }
+}
+function toggleSyncTokenVisibility(){
+  const el = document.getElementById('set-synctoken');
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+function saveSyncSettings(){
+  state.settings.sync.token = document.getElementById('set-synctoken').value.trim();
+  state.settings.sync.repo = document.getElementById('set-syncrepo').value.trim();
+  saveLocalOnly();
+  setSyncIcon('ok');
+  if(syncConfigured()){
+    document.getElementById('sync-msg').innerHTML = '<div class="ok-box">Guardado. Sincronizando…</div>';
+    syncNow(true);
+  }else{
+    document.getElementById('sync-msg').innerHTML = '<div class="ok-box">Guardado (sincronización desactivada).</div>';
+  }
+}
+
 /* ---------- arranque ---------- */
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 showView('session');
+setSyncIcon('ok');
+if(syncConfigured()) syncNow(false);
+// al volver a la app (cambio de pestaña/desbloqueo), traer novedades del otro móvil
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && syncConfigured()) syncNow(false);
+});
 </script>
 </body>
 </html>
