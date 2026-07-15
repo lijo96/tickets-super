@@ -398,7 +398,7 @@
    PWA para repartir gastos del supermercado.
    ============================================================ */
 
-const APP_VERSION = '6';
+const APP_VERSION = '7';
 const STORAGE_KEY = 'ticketsSuperApp_v1';
 const NAMES = { jito: 'Jito', larita: 'Larita' };
 
@@ -422,6 +422,7 @@ function loadState(){
   s.settings = s.settings || {};
   s.settings.model = s.settings.model || 'claude-opus-4-8';
   s.settings.sync = s.settings.sync || { token:'', repo:'' };
+  s.settings.sharedUpdatedAt = s.settings.sharedUpdatedAt || (s.settings.apiKey ? new Date().toISOString() : '');
   s.deleted = s.deleted || { sessions: [], tickets: [] };
   for(const ses of s.sessions){
     ses.updatedAt = ses.updatedAt || ses.createdAt || new Date().toISOString();
@@ -926,6 +927,7 @@ function saveSettings(){
   document.getElementById('set-apikey').value = cleaned;
   state.settings.apiKey = cleaned;
   state.settings.model = document.getElementById('set-model').value;
+  state.settings.sharedUpdatedAt = new Date().toISOString();
   saveState();
   document.getElementById('settings-msg').innerHTML = '<div class="ok-box">✅ Guardado.</div>';
 }
@@ -1031,9 +1033,24 @@ function b64DecodeUtf8(b64){
   const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
   return new TextDecoder().decode(bytes);
 }
-/* La parte del estado que se comparte entre móviles (ni ajustes ni API keys) */
+/* La parte del estado que se comparte entre dispositivos.
+   Incluye la API key de Claude (viaja por el repo PRIVADO) para no tener
+   que pegarla en cada móvil. El token de GitHub nunca se comparte. */
 function stateCore(){
-  return { sessions: state.sessions, deleted: state.deleted };
+  return {
+    sessions: state.sessions,
+    deleted: state.deleted,
+    shared: {
+      apiKey: state.settings.apiKey || '',
+      model: state.settings.model || 'claude-opus-4-8',
+      updatedAt: state.settings.sharedUpdatedAt || ''
+    }
+  };
+}
+function mergeShared(a, b){
+  if(!a || (!a.apiKey && !a.updatedAt)) return b;
+  if(!b || (!b.apiKey && !b.updatedAt)) return a;
+  return (a.updatedAt||'') >= (b.updatedAt||'') ? a : b;
 }
 /* Fusión: unión de sesiones y tickets por id; en conflicto gana el más reciente; los borrados no reviven */
 function mergeStates(local, remote){
@@ -1062,7 +1079,7 @@ function mergeStates(local, remote){
     .filter(s => !del.sessions.includes(s.id))
     .map(s => { s.tickets = (s.tickets||[]).filter(t => !del.tickets.includes(t.id)); return s; })
     .sort((a,b) => (a.createdAt||'').localeCompare(b.createdAt||''));
-  return { sessions, deleted: del };
+  return { sessions, deleted: del, shared: mergeShared(local.shared, remote.shared) };
 }
 function fixActiveSession(){
   const cur = state.sessions.find(s => s.id === state.activeSessionId && !s.closedAt);
@@ -1105,11 +1122,17 @@ async function syncNow(manual, isRetry){
       // repo accesible y fichero inexistente: primera sincronización, seguimos
     }else{ throw new Error('GitHub respondió ' + res.status + '. Revisa el nombre del repositorio.'); }
 
-    const merged = remote ? mergeStates(stateCore(), remote) : { sessions: state.sessions, deleted: state.deleted };
+    const merged = remote ? mergeStates(stateCore(), remote) : stateCore();
     state.sessions = merged.sessions;
     state.deleted = merged.deleted;
+    if(merged.shared && merged.shared.apiKey !== undefined){
+      state.settings.apiKey = merged.shared.apiKey;
+      state.settings.model = merged.shared.model || state.settings.model;
+      state.settings.sharedUpdatedAt = merged.shared.updatedAt || '';
+    }
     fixActiveSession();
     saveLocalOnly();
+    if(currentView==='settings') renderSettings();
 
     const payload = JSON.stringify(merged);
     if(payload !== remoteRaw){

@@ -1,5 +1,5 @@
 /* Service worker — Tickets Súper */
-const CACHE = 'tickets-super-v6';
+const CACHE = 'tickets-super-v7';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-maskable.svg'];
 
 self.addEventListener('install', e => {
