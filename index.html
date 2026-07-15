@@ -919,7 +919,10 @@ function refreshKeybox(inputId){
   box.textContent = (el.type === 'text' && el.value) ? el.value : '';
 }
 function saveSettings(){
-  state.settings.apiKey = document.getElementById('set-apikey').value.trim();
+  // las claves nunca llevan espacios: eliminar cualquier espacio/salto de línea colado al copiar
+  const cleaned = document.getElementById('set-apikey').value.replace(/\s+/g,'');
+  document.getElementById('set-apikey').value = cleaned;
+  state.settings.apiKey = cleaned;
   state.settings.model = document.getElementById('set-model').value;
   saveState();
   document.getElementById('settings-msg').innerHTML = '<div class="ok-box">✅ Guardado.</div>';
@@ -944,7 +947,10 @@ async function testConnection(){
     else{
       let m = 'Error '+res.status;
       try{ const e = await res.json(); m = e.error?.message || m; }catch(_){}
-      if(res.status===401) m = 'API key incorrecta.';
+      if(res.status===401){
+        const k = state.settings.apiKey;
+        m = 'API key incorrecta. La clave guardada tiene '+k.length+' caracteres, empieza por "'+k.slice(0,14)+'…" y termina en "…'+k.slice(-6)+'". Compárala con la de console.anthropic.com.';
+      }
       msg.innerHTML = '<div class="error-box">⚠️ '+esc(m)+'</div>';
     }
   }catch(e){
@@ -1134,8 +1140,10 @@ async function syncNow(manual, isRetry){
   }
 }
 function saveSyncSettings(){
-  state.settings.sync.token = document.getElementById('set-synctoken').value.trim();
-  state.settings.sync.repo = document.getElementById('set-syncrepo').value.trim();
+  const tok = document.getElementById('set-synctoken').value.replace(/\s+/g,'');
+  document.getElementById('set-synctoken').value = tok;
+  state.settings.sync.token = tok;
+  state.settings.sync.repo = document.getElementById('set-syncrepo').value.replace(/\s+/g,'');
   saveLocalOnly();
   setSyncIcon('ok');
   if(syncConfigured()){
