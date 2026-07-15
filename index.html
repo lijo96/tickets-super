@@ -1086,10 +1086,16 @@ async function syncNow(manual, isRetry){
       sha = j.sha;
       remoteRaw = b64DecodeUtf8(j.content);
       remote = JSON.parse(remoteRaw);
-    }else if(res.status === 401){ throw new Error('Token no válido o caducado.');
+    }else if(res.status === 401){ throw new Error('Token no válido o caducado. Genera otro en github.com/settings/personal-access-tokens.');
     }else if(res.status === 403){ throw new Error('El token no tiene permiso sobre ese repositorio.');
-    }else if(res.status !== 404){ throw new Error('GitHub respondió ' + res.status + '. Revisa el nombre del repositorio.'); }
-    // 404 = el fichero aún no existe: primera sincronización
+    }else if(res.status === 404){
+      // Puede ser "el fichero aún no existe" (normal la primera vez) o "el token no ve el repo".
+      const repoCheck = await fetch('https://api.github.com/repos/' + repo, { headers });
+      if(repoCheck.status !== 200){
+        throw new Error('El token no puede acceder al repositorio "' + repo + '". Al crear el token marca "Only select repositories" → tickets-data, y en Permissions → Contents: "Read and write".');
+      }
+      // repo accesible y fichero inexistente: primera sincronización, seguimos
+    }else{ throw new Error('GitHub respondió ' + res.status + '. Revisa el nombre del repositorio.'); }
 
     const merged = remote ? mergeStates(stateCore(), remote) : { sessions: state.sessions, deleted: state.deleted };
     state.sessions = merged.sessions;
@@ -1112,6 +1118,7 @@ async function syncNow(manual, isRetry){
         if(!isRetry){ syncInFlight = false; return syncNow(manual, true); }
         throw new Error('Conflicto de escritura, reintenta en unos segundos.');
       }
+      if(put.status === 404) throw new Error('El token no tiene permiso de ESCRITURA sobre "' + repo + '". Al crearlo, en Permissions → Contents elige "Read and write" (no solo Read).');
       if(!put.ok) throw new Error('No se pudo guardar en GitHub (' + put.status + ').');
     }
     setSyncIcon('ok','Sincronizado ✓ (toca para forzar)');
