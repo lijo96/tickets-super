@@ -332,6 +332,7 @@
       </div>
       <input type="file" id="import-file" accept="application/json" class="hidden" onchange="importData(this)">
     </div>
+    <p class="muted center" id="app-version"></p>
   </section>
 
 </main>
@@ -397,6 +398,7 @@
    PWA para repartir gastos del supermercado.
    ============================================================ */
 
+const APP_VERSION = '6';
 const STORAGE_KEY = 'ticketsSuperApp_v1';
 const NAMES = { jito: 'Jito', larita: 'Larita' };
 
@@ -1159,6 +1161,7 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 showView('session');
+document.getElementById('app-version').textContent = 'Tickets Súper · versión ' + APP_VERSION;
 setSyncIcon('ok');
 if(syncConfigured()) syncNow(false);
 // al volver a la app (cambio de pestaña/desbloqueo), traer novedades del otro móvil
