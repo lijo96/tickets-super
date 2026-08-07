@@ -1,7 +1,7 @@
 {
-  "name": "Tickets Súper — Jito & Larita",
-  "short_name": "Tickets Súper",
-  "description": "Escanea tickets del supermercado y reparte los gastos entre Jito y Larita",
+  "name": "Tickets — Reparto de gastos",
+  "short_name": "Tickets",
+  "description": "Escanea tickets con IA y reparte los gastos entre las personas de cada grupo",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

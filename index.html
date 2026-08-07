@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1a7f4e">
-<title>Tickets Súper — Jito &amp; Larita</title>
+<title>Tickets — Reparto de gastos</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -12,9 +12,6 @@
   :root{
     --bg:#f4f6f5; --card:#ffffff; --text:#1c2b24; --muted:#6b7a72;
     --accent:#1a7f4e; --accent-soft:#e3f2ea;
-    --jito:#2563eb; --jito-soft:#e0eaff;
-    --larita:#c2418f; --larita-soft:#fbe3f1;
-    --ambos:#1a7f4e; --ambos-soft:#e3f2ea;
     --danger:#c0392b; --border:#e2e8e4;
     --radius:14px; --shadow:0 1px 4px rgba(0,0,0,.08);
   }
@@ -33,7 +30,7 @@
     display:flex; align-items:center; gap:10px;
   }
   header h1{font-size:1.15rem; margin:0; font-weight:700; flex:1;}
-  header .sub{font-size:.8rem; opacity:.85;}
+  header .sub{font-size:.8rem; opacity:.85; cursor:pointer;}
   main{padding:16px; max-width:640px; margin:0 auto;}
   .card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-bottom:14px;}
   .muted{color:var(--muted); font-size:.85rem;}
@@ -76,11 +73,22 @@
   .balance{
     border-radius:var(--radius); padding:18px 16px; margin-bottom:14px;
     text-align:center; box-shadow:var(--shadow);
+    background:var(--accent-soft); color:var(--accent);
   }
   .balance .amount{font-size:1.7rem; font-weight:800; margin:4px 0;}
-  .balance.owes-jito{background:var(--jito-soft); color:var(--jito);}
-  .balance.owes-larita{background:var(--larita-soft); color:var(--larita);}
-  .balance.even{background:var(--ambos-soft); color:var(--ambos);}
+  .balance .lines{font-size:.92rem; font-weight:600; line-height:1.5;}
+
+  /* grupos */
+  .group-card{
+    display:flex; align-items:center; gap:12px; background:var(--card);
+    border-radius:var(--radius); box-shadow:var(--shadow); padding:14px; margin-bottom:12px; cursor:pointer;
+  }
+  .group-card.active{outline:2px solid var(--accent);}
+  .gc-icon{font-size:1.9rem; width:42px; text-align:center; flex:0 0 auto;}
+  .gc-info{flex:1; min-width:0;}
+  .gc-name{font-weight:700; font-size:1.05rem;}
+  .gc-meta{font-size:.78rem; color:var(--muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .gc-edit{background:none; font-size:1.15rem; padding:6px 8px; flex:0 0 auto;}
 
   /* ticket list */
   .ticket-item{
@@ -91,12 +99,10 @@
   .ticket-item .info{flex:1; min-width:0;}
   .ticket-item .store{font-weight:700;}
   .ticket-item .meta{font-size:.78rem; color:var(--muted);}
-  .ticket-item .bal{font-weight:700; font-size:.9rem; white-space:nowrap; text-align:right;}
+  .ticket-item .bal{font-weight:700; font-size:.95rem; white-space:nowrap; text-align:right;}
   .payer-chip{
     font-size:.68rem; font-weight:700; padding:2px 8px; border-radius:20px; display:inline-block;
   }
-  .payer-chip.jito{background:var(--jito-soft); color:var(--jito);}
-  .payer-chip.larita{background:var(--larita-soft); color:var(--larita);}
 
   /* fab */
   .fab{
@@ -119,12 +125,10 @@
     max-height:88vh; overflow-y:auto;
   }
   .modal h3{margin:0 0 14px;}
-  .payer-select{display:flex; gap:12px; margin:10px 0 4px;}
+  .payer-select{display:flex; gap:10px; margin:10px 0 4px; flex-wrap:wrap;}
   .payer-select button{
-    flex:1; padding:20px 10px; font-size:1.1rem; font-weight:800; border-radius:14px;
+    flex:1 1 100px; padding:16px 8px; font-size:1rem; font-weight:800; border-radius:14px;
   }
-  .payer-select .p-jito{background:var(--jito-soft); color:var(--jito);}
-  .payer-select .p-larita{background:var(--larita-soft); color:var(--larita);}
   .payer-select button.sel{outline:3px solid currentColor;}
 
   #preview{width:100%; border-radius:12px; margin:12px 0; max-height:45vh; object-fit:contain; background:#eee;}
@@ -136,23 +140,15 @@
   @keyframes spin{to{transform:rotate(360deg);}}
 
   /* review items */
-  .item-row{
-    display:flex; align-items:center; gap:8px; padding:10px 0;
-    border-bottom:1px solid var(--border);
-  }
+  .item-row{ padding:10px 0; border-bottom:1px solid var(--border); }
   .item-row:last-child{border-bottom:none;}
+  .irow1{display:flex; align-items:center; gap:8px;}
   .item-row .iname{flex:1; min-width:0; cursor:pointer;}
   .item-row .iname .n{font-weight:600; font-size:.92rem;}
   .item-row .iname .orig{font-size:.7rem; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .item-row .iprice{font-weight:700; font-size:.92rem; white-space:nowrap; cursor:pointer;}
-  .seg{display:flex; border-radius:10px; overflow:hidden; border:1px solid var(--border);}
-  .seg button{
-    border-radius:0; padding:8px 0; width:38px; font-size:.78rem; font-weight:800;
-    background:#f2f4f3; color:var(--muted);
-  }
-  .seg button.sel-jito{background:var(--jito); color:#fff;}
-  .seg button.sel-ambos{background:var(--ambos); color:#fff;}
-  .seg button.sel-larita{background:var(--larita); color:#fff;}
+  .irow2{display:flex; flex-wrap:wrap; gap:6px; margin-top:7px;}
+  .chip-p{border-radius:20px; padding:6px 12px; font-size:.75rem; font-weight:700; border:none;}
   .review-summary{
     position:sticky; bottom:calc(70px + env(safe-area-inset-bottom));
     background:var(--card); border:1px solid var(--border);
@@ -161,9 +157,6 @@
   }
   .quick-assign{display:flex; gap:8px; margin:8px 0 12px; flex-wrap:wrap;}
   .quick-assign button{font-size:.75rem; padding:6px 10px; border-radius:8px;}
-  .qa-jito{background:var(--jito-soft); color:var(--jito);}
-  .qa-ambos{background:var(--ambos-soft); color:var(--ambos);}
-  .qa-larita{background:var(--larita-soft); color:var(--larita);}
 
   /* history */
   .hist-item{padding:13px 4px; border-bottom:1px solid var(--border); cursor:pointer;}
@@ -184,11 +177,12 @@
     padding:9px 10px; margin-top:7px; color:var(--text); user-select:all;
   }
   .keybox:empty{display:none;}
-  .ok-box{background:var(--ambos-soft); color:var(--ambos); border-radius:10px; padding:12px; font-size:.85rem; margin-top:10px;}
+  .ok-box{background:var(--accent-soft); color:var(--accent); border-radius:10px; padding:12px; font-size:.85rem; margin-top:10px;}
   .hidden{display:none !important;}
   h2{font-size:1.05rem; margin:4px 0 12px;}
-  .totline{display:flex; justify-content:space-between; font-size:.9rem; padding:3px 0;}
+  .totline{display:flex; justify-content:space-between; font-size:.9rem; padding:3px 0; gap:10px;}
   .totline strong{font-size:1rem;}
+  .gm-prow{display:flex; gap:8px; margin-bottom:8px; align-items:center;}
 </style>
 </head>
 <body>
@@ -196,8 +190,8 @@
 <header>
   <span style="font-size:1.5rem">🧾</span>
   <div style="flex:1">
-    <h1 id="header-title">Tickets Súper</h1>
-    <div class="sub" id="header-sub">Jito &amp; Larita</div>
+    <h1 id="header-title">Tickets</h1>
+    <div class="sub" id="header-sub" onclick="showView('groups')">Elige un grupo</div>
   </div>
   <button id="sync-btn" class="hidden" onclick="syncNow(true)" title="Sincronizar ahora"
     style="background:none;color:#fff;font-size:1.35rem;padding:6px 8px;line-height:1">☁️</button>
@@ -205,20 +199,37 @@
 
 <main>
 
+  <!-- ============ VISTA: GRUPOS ============ -->
+  <section id="view-groups" class="view">
+    <div class="card">
+      <h2>Tus grupos</h2>
+      <p class="muted" style="margin-top:-6px">Cada grupo tiene su propia gente y sus propios tickets — por ejemplo "Tickets Súper" con Jito y Larita, o "Tickets Cine" con otras personas.</p>
+      <div id="groups-list"></div>
+      <p class="muted center hidden" id="no-groups-msg">Aún no tienes ningún grupo.</p>
+      <button class="btn-primary" style="margin-top:10px" onclick="openGroupModal(null)">➕ Nuevo grupo</button>
+    </div>
+  </section>
+
   <!-- ============ VISTA: SESIÓN ACTIVA ============ -->
-  <section id="view-session" class="view active">
+  <section id="view-session" class="view">
+    <div id="session-no-group" class="card center hidden">
+      <p style="font-size:2.5rem; margin:6px 0">👥</p>
+      <p><strong>Primero elige o crea un grupo</strong></p>
+      <button class="btn-primary" onclick="showView('groups')">Ir a Grupos</button>
+    </div>
+
     <div id="session-empty" class="card center hidden">
       <p style="font-size:2.5rem; margin:6px 0">🛒</p>
       <p><strong>No hay ninguna sesión abierta</strong></p>
-      <p class="muted">Crea una sesión (por ejemplo, la del mes) y ve añadiendo los tickets del súper.</p>
+      <p class="muted">Crea una sesión (por ejemplo, la del mes) y ve añadiendo los tickets.</p>
       <button class="btn-primary" onclick="newSessionDialog()">➕ Nueva sesión</button>
     </div>
 
     <div id="session-active" class="hidden">
-      <div id="balance-banner" class="balance even">
+      <div id="balance-banner" class="balance">
         <div class="muted" id="session-name-label" style="color:inherit;opacity:.8"></div>
         <div class="amount" id="balance-amount">0,00 €</div>
-        <div id="balance-text" style="font-weight:600"></div>
+        <div class="lines" id="balance-text"></div>
       </div>
 
       <div class="card">
@@ -245,21 +256,13 @@
         </div>
       </div>
       <label>Pagado por</label>
-      <div class="payer-select" style="margin-top:4px">
-        <button class="p-jito" id="rv-payer-jito" onclick="setReviewPayer('jito')">Jito</button>
-        <button class="p-larita" id="rv-payer-larita" onclick="setReviewPayer('larita')">Larita</button>
-      </div>
+      <div class="payer-select" id="rv-payer-list" style="margin-top:4px"></div>
     </div>
 
     <div class="card">
-      <h2>Artículos — ¿de quién es cada cosa?</h2>
-      <p class="muted" style="margin-top:-6px">J = Jito · A = Ambos (a medias) · L = Larita. Toca el nombre o el precio para editarlos.</p>
-      <div class="quick-assign">
-        <span class="muted" style="align-self:center">Todos:</span>
-        <button class="qa-jito" onclick="assignAll('jito')">Jito</button>
-        <button class="qa-ambos" onclick="assignAll('ambos')">Ambos</button>
-        <button class="qa-larita" onclick="assignAll('larita')">Larita</button>
-      </div>
+      <h2>Artículos — ¿quién comparte cada cosa?</h2>
+      <p class="muted" style="margin-top:-6px">Toca los círculos con las iniciales de cada persona para marcar quién paga ese artículo. Toca el nombre o el precio para editarlos.</p>
+      <div class="quick-assign" id="rv-quick-assign"></div>
       <div id="rv-items"></div>
       <button class="btn-secondary btn-small" style="margin-top:12px" onclick="addManualItem()">➕ Añadir artículo</button>
     </div>
@@ -275,19 +278,26 @@
 
   <!-- ============ VISTA: HISTORIAL ============ -->
   <section id="view-history" class="view">
-    <div class="card">
-      <h2>Sesiones cerradas</h2>
-      <div id="history-list"></div>
-      <p class="muted center hidden" id="no-history-msg">Todavía no has cerrado ninguna sesión.</p>
+    <div id="history-no-group" class="card center hidden">
+      <p style="font-size:2.5rem; margin:6px 0">👥</p>
+      <p><strong>Elige un grupo para ver su historial</strong></p>
+      <button class="btn-primary" onclick="showView('groups')">Ir a Grupos</button>
     </div>
-    <div id="history-detail" class="hidden"></div>
+    <div id="history-content" class="hidden">
+      <div class="card">
+        <h2>Sesiones cerradas</h2>
+        <div id="history-list"></div>
+        <p class="muted center hidden" id="no-history-msg">Todavía no has cerrado ninguna sesión en este grupo.</p>
+      </div>
+      <div id="history-detail" class="hidden"></div>
+    </div>
   </section>
 
   <!-- ============ VISTA: AJUSTES ============ -->
   <section id="view-settings" class="view">
     <div class="card">
       <h2>Conexión con Claude (IA)</h2>
-      <p class="muted">La foto del ticket se envía a la API de Claude para leer los artículos y precios. Necesitas una API key de <strong>console.anthropic.com</strong>. Se guarda solo en este móvil.</p>
+      <p class="muted">La foto del ticket se envía a la API de Claude para leer los artículos y precios. Necesitas una API key de <strong>console.anthropic.com</strong>. Se comparte entre tus dispositivos sincronizados.</p>
       <label>API key</label>
       <div class="row">
         <input type="password" id="set-apikey" placeholder="sk-ant-..." oninput="refreshKeybox('set-apikey')">
@@ -308,7 +318,7 @@
     </div>
     <div class="card">
       <h2>Sincronización entre móviles</h2>
-      <p class="muted">Con esto configurado en los dos móviles, los tickets que suba uno le aparecen al otro. Los datos se guardan en un repositorio <strong>privado</strong> de GitHub. Necesitas un token de GitHub con permiso de lectura/escritura sobre ese repositorio (mismo token en ambos móviles).</p>
+      <p class="muted">Con esto configurado en los dos móviles, los grupos, tickets y la API key que suba uno le aparecen al otro. Los datos se guardan en un repositorio <strong>privado</strong> de GitHub. Necesitas un token de GitHub con permiso de lectura/escritura sobre ese repositorio (mismo token en ambos móviles).</p>
       <label>Token de GitHub</label>
       <div class="row">
         <input type="password" id="set-synctoken" placeholder="github_pat_..." oninput="refreshKeybox('set-synctoken')">
@@ -325,7 +335,7 @@
     </div>
     <div class="card">
       <h2>Datos</h2>
-      <p class="muted">Todo se guarda en este móvil (no hay servidor). Puedes hacer una copia de seguridad exportando los datos.</p>
+      <p class="muted">Todo se guarda en este dispositivo (y en el repo privado si sincronizas). Puedes hacer una copia de seguridad exportando los datos.</p>
       <div class="row">
         <button class="btn-secondary" onclick="exportData()">⬇ Exportar</button>
         <button class="btn-secondary" onclick="document.getElementById('import-file').click()">⬆ Importar</button>
@@ -342,6 +352,7 @@
 
 <!-- Nav inferior -->
 <nav>
+  <button id="nav-groups" onclick="showView('groups')"><span class="ico">👥</span>Grupos</button>
   <button id="nav-session" class="active" onclick="showView('session')"><span class="ico">🧾</span>Sesión</button>
   <button id="nav-history" onclick="showView('history')"><span class="ico">📚</span>Historial</button>
   <button id="nav-settings" onclick="showView('settings')"><span class="ico">⚙️</span>Ajustes</button>
@@ -353,10 +364,7 @@
     <h3>Escanear ticket</h3>
     <div id="scan-step-payer">
       <p class="muted">¿Quién ha pagado este ticket?</p>
-      <div class="payer-select">
-        <button class="p-jito" onclick="scanChoosePayer('jito')">Jito</button>
-        <button class="p-larita" onclick="scanChoosePayer('larita')">Larita</button>
-      </div>
+      <div class="payer-select" id="scan-payer-list"></div>
       <button class="btn-secondary" style="margin-top:14px" onclick="closeScanModal()">Cancelar</button>
     </div>
     <div id="scan-step-photo" class="hidden">
@@ -392,85 +400,256 @@
   </div>
 </div>
 
+<!-- ============ MODAL: GRUPO (crear/editar) ============ -->
+<div class="modal-bg" id="group-modal">
+  <div class="modal">
+    <h3 id="gm-title">Nuevo grupo</h3>
+    <div class="row" style="align-items:flex-end">
+      <div style="flex:0 0 70px">
+        <label style="margin-top:0">Icono</label>
+        <input type="text" id="gm-icon" maxlength="4" placeholder="🧾">
+      </div>
+      <div>
+        <label style="margin-top:0">Nombre del grupo</label>
+        <input type="text" id="gm-name" placeholder="Ej. Tickets Cine">
+      </div>
+    </div>
+    <label>Personas del grupo</label>
+    <div id="gm-participants"></div>
+    <button class="btn-secondary btn-small" onclick="gmAddParticipant()">➕ Añadir persona</button>
+    <div class="row" style="margin-top:16px">
+      <button class="btn-secondary" onclick="closeGroupModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveGroupModal()">💾 Guardar</button>
+    </div>
+    <button class="btn-danger-soft hidden" id="gm-delete-btn" style="width:100%; margin-top:10px" onclick="deleteGroupModal()">🗑 Borrar este grupo</button>
+  </div>
+</div>
+
 <script>
 /* ============================================================
-   Tickets Súper — Jito & Larita
-   PWA para repartir gastos del supermercado.
+   Tickets — Reparto de gastos por grupos (estilo Tricount)
+   PWA: escanea tickets con IA y reparte el gasto entre las
+   personas de cada grupo. Cada grupo tiene su propia gente.
    ============================================================ */
 
-const APP_VERSION = '7';
+const APP_VERSION = '8';
 const STORAGE_KEY = 'ticketsSuperApp_v1';
-const NAMES = { jito: 'Jito', larita: 'Larita' };
+const LEGACY_GROUP_ID = 'grp-migrado'; // id fijo para fusionar bien entre dispositivos al migrar
 
 let state = loadState();
-let currentView = 'session';
+let currentView = 'groups';
 let scanPayer = null;
-let scanImageB64 = null;       // base64 sin prefijo data:
-let reviewTicket = null;       // ticket en edición (borrador o existente)
+let scanImageB64 = null;         // base64 sin prefijo data:
+let reviewTicket = null;         // ticket en edición (borrador o existente)
+let reviewGroupId = null;        // grupo al que pertenece el ticket en edición
+let reviewSessionId = null;      // sesión a la que pertenece
 let reviewIsNew = false;
 let editItemIndex = -1;
+let gmState = null;              // borrador del modal de grupo
 
-/* ---------- persistencia ---------- */
-function loadState(){
-  let s = null;
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw) s = JSON.parse(raw);
-  }catch(e){}
-  if(!s) s = { sessions: [], activeSessionId: null, settings: { apiKey:'', model:'claude-opus-4-8' } };
-  // normalizar campos añadidos en versiones posteriores
-  s.settings = s.settings || {};
-  s.settings.model = s.settings.model || 'claude-opus-4-8';
-  s.settings.sync = s.settings.sync || { token:'', repo:'' };
-  s.settings.sharedUpdatedAt = s.settings.sharedUpdatedAt || (s.settings.apiKey ? new Date().toISOString() : '');
-  s.deleted = s.deleted || { sessions: [], tickets: [] };
-  for(const ses of s.sessions){
-    ses.updatedAt = ses.updatedAt || ses.createdAt || new Date().toISOString();
-    for(const t of (ses.tickets||[])) t.updatedAt = t.updatedAt || ses.updatedAt;
-  }
-  return s;
-}
-function saveLocalOnly(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-function saveState(){ saveLocalOnly(); scheduleSync(); }
-function touch(session, ticket){
-  const now = new Date().toISOString();
-  if(session) session.updatedAt = now;
-  if(ticket) ticket.updatedAt = now;
-}
-function activeSession(){ return state.sessions.find(s => s.id === state.activeSessionId) || null; }
+/* ---------- utilidades generales ---------- */
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-
-/* ---------- utilidades ---------- */
 function fmt(n){
   return (Math.round(n*100)/100).toLocaleString('es-ES',{style:'currency',currency:'EUR'});
 }
 function esc(s){
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+function uniq(arr){ return [...new Set(arr)]; }
+function hashHue(str){
+  let h = 0;
+  for(let i=0;i<str.length;i++) h = (h*31 + str.charCodeAt(i)) >>> 0;
+  return h % 360;
+}
+function participantColor(id){
+  const hue = hashHue(String(id));
+  return { main: 'hsl(' + hue + ' 60% 38%)', soft: 'hsl(' + hue + ' 70% 93%)' };
+}
+function initials(name){
+  return String(name||'?').trim().slice(0,2).toUpperCase() || '?';
+}
 
-/* Balance de un ticket: cuánto debe el que NO pagó al que pagó. */
-function ticketOwed(t){
-  let owed = 0;
-  for(const it of t.items){
-    if(it.assign === 'ambos') owed += it.price/2;
-    else if(it.assign !== t.payer) owed += it.price; // es del otro entero
+/* ---------- migración de datos antiguos (v7 y anteriores) a "grupos" ---------- */
+function legacyToGroup(sessionsArr, deletedTickets, deletedSessions){
+  const jito = { id:'jito', name:'Jito' }, larita = { id:'larita', name:'Larita' };
+  const sessions = (sessionsArr||[]).map(s => ({
+    id: s.id, name: s.name, createdAt: s.createdAt, updatedAt: s.updatedAt || s.createdAt,
+    closedAt: s.closedAt || null,
+    finalBalances: s.finalNet !== undefined ? { jito: s.finalNet, larita: -s.finalNet } : undefined,
+    tickets: (s.tickets||[]).map(t => ({
+      id: t.id, store: t.store, date: t.date, payer: t.payer,
+      updatedAt: t.updatedAt || s.updatedAt || s.createdAt,
+      items: (t.items||[]).map(it => ({
+        name: it.name, orig: it.orig, price: it.price,
+        shareWith: it.assign==='jito' ? ['jito'] : it.assign==='larita' ? ['larita'] : ['jito','larita']
+      }))
+    }))
+  }));
+  return {
+    id: LEGACY_GROUP_ID, name: 'Tickets Súper', icon: '🧾',
+    participants: [jito, larita], sessions,
+    activeSessionId: null,
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+  };
+}
+function normalizeGroup(g){
+  g.icon = g.icon || '🧾';
+  g.participants = g.participants || [];
+  g.activeSessionId = g.activeSessionId === undefined ? null : g.activeSessionId;
+  g.updatedAt = g.updatedAt || g.createdAt || new Date().toISOString();
+  for(const s of (g.sessions||[])){
+    s.updatedAt = s.updatedAt || s.createdAt || g.updatedAt;
+    for(const t of (s.tickets||[])){
+      t.updatedAt = t.updatedAt || s.updatedAt;
+      if(!Array.isArray(t.items)) t.items = [];
+      for(const it of t.items){
+        if(!Array.isArray(it.shareWith)) it.shareWith = g.participants.map(p=>p.id);
+      }
+    }
   }
-  return owed;
+  return g;
 }
-/* Balance neto de una sesión: >0 → Larita debe a Jito; <0 → Jito debe a Larita */
-function sessionNet(s){
-  let net = 0;
-  for(const t of s.tickets){
-    const owed = ticketOwed(t);
-    net += (t.payer === 'jito') ? owed : -owed;
+/* Normaliza el estado LOCAL completo (localStorage) al esquema de grupos */
+function migrateRaw(raw){
+  const emptySettings = { apiKey:'', model:'claude-opus-4-8', sync:{token:'',repo:''}, sharedUpdatedAt:'' };
+  if(!raw) return { groups: [], activeGroupId: null, deleted:{groups:[],sessions:[],tickets:[]}, settings: emptySettings };
+  if(Array.isArray(raw.groups)){
+    raw.groups = raw.groups.map(normalizeGroup);
+    raw.deleted = raw.deleted || {};
+    raw.deleted.groups = raw.deleted.groups || [];
+    raw.deleted.sessions = raw.deleted.sessions || [];
+    raw.deleted.tickets = raw.deleted.tickets || [];
+    raw.settings = raw.settings || {};
+    raw.settings.model = raw.settings.model || 'claude-opus-4-8';
+    raw.settings.sync = raw.settings.sync || { token:'', repo:'' };
+    raw.settings.sharedUpdatedAt = raw.settings.sharedUpdatedAt || '';
+    raw.activeGroupId = raw.activeGroupId || null;
+    return raw;
   }
-  return Math.round(net*100)/100;
+  if(Array.isArray(raw.sessions)){
+    const group = legacyToGroup(raw.sessions);
+    group.activeSessionId = raw.activeSessionId || null;
+    const settings = raw.settings || {};
+    settings.model = settings.model || 'claude-opus-4-8';
+    settings.sync = settings.sync || { token:'', repo:'' };
+    settings.sharedUpdatedAt = settings.sharedUpdatedAt || (settings.apiKey ? new Date().toISOString() : '');
+    return {
+      groups: [group],
+      activeGroupId: group.id,
+      deleted: { groups: [], sessions: (raw.deleted&&raw.deleted.sessions)||[], tickets: (raw.deleted&&raw.deleted.tickets)||[] },
+      settings
+    };
+  }
+  return { groups: [], activeGroupId: null, deleted:{groups:[],sessions:[],tickets:[]}, settings: raw.settings || emptySettings };
 }
-function netText(net){
-  if(Math.abs(net) < 0.005) return { cls:'even', amount:fmt(0), text:'Estáis en paz 🤝' };
-  if(net > 0) return { cls:'owes-jito', amount:fmt(net), text:'Larita debe esto a Jito' };
-  return { cls:'owes-larita', amount:fmt(-net), text:'Jito debe esto a Larita' };
+/* Normaliza un JSON REMOTO (repo de sincronización) al esquema {groups,deleted,shared} */
+function remoteToGroups(raw){
+  const emptyShared = { apiKey:'', model:'claude-opus-4-8', updatedAt:'' };
+  if(!raw) return { groups: [], deleted:{groups:[],sessions:[],tickets:[]}, shared: emptyShared };
+  if(Array.isArray(raw.groups)){
+    const d = raw.deleted || {};
+    return {
+      groups: raw.groups.map(normalizeGroup),
+      deleted: { groups: d.groups||[], sessions: d.sessions||[], tickets: d.tickets||[] },
+      shared: raw.shared || emptyShared
+    };
+  }
+  if(Array.isArray(raw.sessions)){
+    const group = legacyToGroup(raw.sessions);
+    const d = raw.deleted || {};
+    return {
+      groups: [group],
+      deleted: { groups: [], sessions: d.sessions||[], tickets: d.tickets||[] },
+      shared: raw.shared || emptyShared
+    };
+  }
+  return { groups: [], deleted:{groups:[],sessions:[],tickets:[]}, shared: emptyShared };
 }
+
+/* ---------- persistencia ---------- */
+function loadState(){
+  let raw = null;
+  try{ raw = JSON.parse(localStorage.getItem(STORAGE_KEY)); }catch(e){}
+  const s = migrateRaw(raw);
+  normalizeActiveGroup(s);
+  return s;
+}
+function saveLocalOnly(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveState(){ saveLocalOnly(); scheduleSync(); }
+function touch(a, b){
+  const now = new Date().toISOString();
+  if(a) a.updatedAt = now;
+  if(b) b.updatedAt = now;
+}
+function normalizeActiveGroup(s){
+  if(!s.groups.find(g=>g.id===s.activeGroupId)){
+    s.activeGroupId = s.groups.length ? s.groups[0].id : null;
+  }
+}
+function findGroup(id){ return state.groups.find(g=>g.id===id) || null; }
+function activeGroup(){ return findGroup(state.activeGroupId); }
+function openSessionOf(g){ return g ? (g.sessions||[]).find(s => s.id===g.activeSessionId && !s.closedAt) : null; }
+function payerName(g, id){ const p = g && g.participants.find(p=>p.id===id); return p ? p.name : '(persona eliminada)'; }
+
+/* ---------- reparto de gastos: cálculo genérico para N personas ---------- */
+/* Balance de un solo ticket: {participantId: neto} (positivo = le deben, negativo = debe) */
+function ticketBalances(t, participants){
+  const bal = {};
+  for(const p of participants) bal[p.id] = 0;
+  const payerOk = bal.hasOwnProperty(t.payer);
+  for(const it of (t.items||[])){
+    let owers = (it.shareWith||[]).filter(id => bal.hasOwnProperty(id));
+    if(!owers.length) owers = payerOk ? [t.payer] : [];
+    if(payerOk) bal[t.payer] += it.price;
+    if(owers.length){
+      const per = it.price / owers.length;
+      for(const id of owers) bal[id] -= per;
+    }
+  }
+  return bal;
+}
+/* Balance acumulado de varios tickets (una sesión) */
+function sessionBalances(tickets, participants){
+  const bal = {};
+  for(const p of participants) bal[p.id] = 0;
+  for(const t of (tickets||[])){
+    const tb = ticketBalances(t, participants);
+    for(const pid in tb) bal[pid] = (bal[pid]||0) + tb[pid];
+  }
+  return bal;
+}
+/* Simplifica una tabla de balances netos en una lista mínima de pagos {from,to,amount} */
+function simplifyDebts(balances, participants){
+  const creditors = [], debtors = [];
+  for(const p of participants){
+    const v = Math.round((balances[p.id]||0)*100)/100;
+    if(v > 0.004) creditors.push({ id:p.id, amt:v });
+    else if(v < -0.004) debtors.push({ id:p.id, amt:-v });
+  }
+  creditors.sort((a,b)=>b.amt-a.amt);
+  debtors.sort((a,b)=>b.amt-a.amt);
+  const result = [];
+  let i=0, j=0;
+  while(i<debtors.length && j<creditors.length){
+    const d = debtors[i], c = creditors[j];
+    const amt = Math.min(d.amt, c.amt);
+    if(amt > 0.004) result.push({ from:d.id, to:c.id, amount:Math.round(amt*100)/100 });
+    d.amt -= amt; c.amt -= amt;
+    if(d.amt <= 0.004) i++;
+    if(c.amt <= 0.004) j++;
+  }
+  return result;
+}
+function balanceBannerHtml(balances, participants){
+  const lines = simplifyDebts(balances, participants);
+  const total = lines.reduce((a,l)=>a+l.amount,0);
+  if(!lines.length){
+    return { amount: fmt(0), html: 'Estáis en paz 🤝' };
+  }
+  const html = lines.map(l => `<div>${esc(payerNameById(participants,l.from))} debe <strong>${fmt(l.amount)}</strong> a ${esc(payerNameById(participants,l.to))}</div>`).join('');
+  return { amount: fmt(total), html };
+}
+function payerNameById(participants, id){ const p = participants.find(p=>p.id===id); return p ? p.name : '(persona eliminada)'; }
 
 /* ---------- navegación ---------- */
 function showView(v){
@@ -480,94 +659,225 @@ function showView(v){
   document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
   const nav = document.getElementById('nav-'+v);
   if(nav) nav.classList.add('active');
-  document.getElementById('fab-scan').classList.toggle('hidden', !(v==='session' && activeSession()));
+  renderHeader();
+  updateFab();
+  if(v==='groups') renderGroups();
   if(v==='session') renderSession();
   if(v==='history') renderHistory();
   if(v==='settings') renderSettings();
   window.scrollTo(0,0);
 }
+function renderHeader(){
+  const g = activeGroup();
+  document.getElementById('header-sub').textContent = g ? g.name : 'Elige un grupo';
+}
+function updateFab(){
+  const g = activeGroup();
+  const s = openSessionOf(g);
+  document.getElementById('fab-scan').classList.toggle('hidden', !(currentView==='session' && g && s));
+}
+
+/* ---------- grupos ---------- */
+function renderGroups(){
+  const list = document.getElementById('groups-list');
+  document.getElementById('no-groups-msg').classList.toggle('hidden', state.groups.length>0);
+  list.innerHTML = state.groups.map(g => {
+    const open = openSessionOf(g);
+    return `<div class="group-card ${g.id===state.activeGroupId?'active':''}" onclick="selectGroup('${g.id}')">
+      <div class="gc-icon">${esc(g.icon||'🧾')}</div>
+      <div class="gc-info">
+        <div class="gc-name">${esc(g.name)}</div>
+        <div class="gc-meta">${g.participants.map(p=>esc(p.name)).join(' · ')||'Sin personas'}</div>
+        ${open ? `<div class="gc-meta" style="color:var(--accent)">Sesión activa: ${esc(open.name)}</div>` : ''}
+      </div>
+      <button class="gc-edit" onclick="event.stopPropagation(); openGroupModal('${g.id}')">✏️</button>
+    </div>`;
+  }).join('');
+}
+function selectGroup(id){
+  state.activeGroupId = id;
+  saveLocalOnly();
+  showView('session');
+}
+
+function openGroupModal(id){
+  if(id){
+    const g = findGroup(id);
+    if(!g) return;
+    gmState = { editingId:id, name:g.name, icon:g.icon||'🧾', participants: g.participants.map(p=>({id:p.id,name:p.name})) };
+  }else{
+    gmState = { editingId:null, name:'', icon:'🧾', participants:[{id:null,name:''},{id:null,name:''}] };
+  }
+  document.getElementById('gm-title').textContent = id ? 'Editar grupo' : 'Nuevo grupo';
+  document.getElementById('gm-name').value = gmState.name;
+  document.getElementById('gm-icon').value = gmState.icon;
+  document.getElementById('gm-delete-btn').classList.toggle('hidden', !id);
+  renderGmParticipants();
+  document.getElementById('group-modal').classList.add('open');
+}
+function closeGroupModal(){ document.getElementById('group-modal').classList.remove('open'); gmState = null; }
+function renderGmParticipants(){
+  const cont = document.getElementById('gm-participants');
+  cont.innerHTML = gmState.participants.map((p,i) => `
+    <div class="gm-prow">
+      <input type="text" value="${esc(p.name)}" placeholder="Nombre de la persona" oninput="gmState.participants[${i}].name=this.value">
+      <button class="eye-btn" style="background:#fdecea;color:var(--danger)" onclick="gmRemoveParticipant(${i})">✕</button>
+    </div>`).join('');
+}
+function gmAddParticipant(){
+  gmState.participants.push({ id:null, name:'' });
+  renderGmParticipants();
+}
+function gmRemoveParticipant(i){
+  if(gmState.participants.length<=1){ alert('El grupo debe tener al menos una persona.'); return; }
+  gmState.participants.splice(i,1);
+  renderGmParticipants();
+}
+function groupParticipantInUse(g, pid){
+  for(const s of (g.sessions||[])){
+    for(const t of (s.tickets||[])){
+      if(t.payer===pid) return true;
+      if((t.items||[]).some(it => (it.shareWith||[]).includes(pid))) return true;
+    }
+  }
+  return false;
+}
+function saveGroupModal(){
+  const name = document.getElementById('gm-name').value.trim();
+  const icon = document.getElementById('gm-icon').value.trim() || '🧾';
+  if(!name){ alert('Ponle un nombre al grupo.'); return; }
+  const draft = gmState.participants.filter(p => p.name.trim());
+  if(!draft.length){ alert('Añade al menos una persona.'); return; }
+
+  if(gmState.editingId){
+    const g = findGroup(gmState.editingId);
+    if(!g) return;
+    const newParticipants = draft.map(p => ({ id: p.id || uid(), name: p.name.trim() }));
+    const newIds = new Set(newParticipants.map(p=>p.id));
+    const removed = g.participants.filter(p => !newIds.has(p.id));
+    for(const rp of removed){
+      if(groupParticipantInUse(g, rp.id)){
+        alert('No puedes quitar a "'+rp.name+'": tiene artículos o tickets asignados en este grupo. Reasígnalos primero.');
+        return;
+      }
+    }
+    g.name = name; g.icon = icon; g.participants = newParticipants;
+    touch(g);
+  }else{
+    const participants = draft.map(p => ({ id: uid(), name: p.name.trim() }));
+    const g = { id:uid(), name, icon, participants, sessions:[], activeSessionId:null,
+      createdAt:new Date().toISOString(), updatedAt:new Date().toISOString() };
+    state.groups.push(g);
+    state.activeGroupId = g.id;
+  }
+  saveState();
+  closeGroupModal();
+  renderGroups();
+  renderHeader();
+}
+function deleteGroupModal(){
+  if(!gmState || !gmState.editingId) return;
+  if(!confirm('¿Borrar el grupo "'+gmState.name+'" y todas sus sesiones y tickets? No se puede deshacer.')) return;
+  const id = gmState.editingId;
+  state.groups = state.groups.filter(g=>g.id!==id);
+  state.deleted.groups.push(id);
+  if(state.activeGroupId===id) normalizeActiveGroup(state);
+  saveState();
+  closeGroupModal();
+  showView('groups');
+}
 
 /* ---------- sesión ---------- */
 function renderSession(){
-  const s = activeSession();
-  document.getElementById('session-empty').classList.toggle('hidden', !!s);
-  document.getElementById('session-active').classList.toggle('hidden', !s);
-  document.getElementById('fab-scan').classList.toggle('hidden', !(currentView==='session' && s));
-  if(!s){ document.getElementById('header-sub').textContent = 'Jito & Larita'; return; }
+  const g = activeGroup();
+  const s = openSessionOf(g);
+  document.getElementById('session-no-group').classList.toggle('hidden', !!g);
+  document.getElementById('session-empty').classList.toggle('hidden', !g || !!s);
+  document.getElementById('session-active').classList.toggle('hidden', !g || !s);
+  updateFab();
+  if(!g || !s) return;
 
-  document.getElementById('header-sub').textContent = s.name;
   document.getElementById('session-name-label').textContent = s.name;
-
-  const net = sessionNet(s);
-  const nt = netText(net);
-  const banner = document.getElementById('balance-banner');
-  banner.className = 'balance ' + nt.cls;
-  document.getElementById('balance-amount').textContent = nt.amount;
-  document.getElementById('balance-text').textContent = nt.text;
+  const balances = sessionBalances(s.tickets, g.participants);
+  const bn = balanceBannerHtml(balances, g.participants);
+  document.getElementById('balance-amount').textContent = bn.amount;
+  document.getElementById('balance-text').innerHTML = bn.html;
 
   const list = document.getElementById('ticket-list');
   document.getElementById('ticket-count').textContent = s.tickets.length ? '('+s.tickets.length+')' : '';
   document.getElementById('no-tickets-msg').classList.toggle('hidden', s.tickets.length>0);
   list.innerHTML = s.tickets.map((t,i) => {
-    const owed = ticketOwed(t);
-    const other = t.payer==='jito' ? 'Larita' : 'Jito';
+    const total = t.items.reduce((a,b)=>a+b.price,0);
+    const c = participantColor(t.payer);
     return `<div class="ticket-item" onclick="openTicket(${i})">
       <div class="info">
-        <div class="store">${esc(t.store||'Súper')} <span class="payer-chip ${t.payer}">pagó ${NAMES[t.payer]}</span></div>
-        <div class="meta">${esc(t.date||'')} · ${t.items.length} artículos · total ${fmt(t.items.reduce((a,b)=>a+b.price,0))}</div>
+        <div class="store">${esc(t.store||'Ticket')} <span class="payer-chip" style="background:${c.soft};color:${c.main}">pagó ${esc(payerName(g,t.payer))}</span></div>
+        <div class="meta">${esc(t.date||'')} · ${t.items.length} artículos</div>
       </div>
-      <div class="bal">${other} debe<br>${fmt(owed)}</div>
+      <div class="bal">${fmt(total)}</div>
     </div>`;
   }).join('');
 }
 
 function newSessionDialog(){
+  const g = activeGroup();
+  if(!g) return;
   const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const d = new Date();
   const suggestion = months[d.getMonth()].charAt(0).toUpperCase()+months[d.getMonth()].slice(1)+' '+d.getFullYear();
   const name = prompt('Nombre de la sesión/evento:', suggestion);
   if(name === null) return;
   const s = { id: uid(), name: name.trim() || suggestion, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), closedAt: null, tickets: [] };
-  state.sessions.push(s);
-  state.activeSessionId = s.id;
+  g.sessions.push(s);
+  g.activeSessionId = s.id;
+  touch(g);
   saveState();
   renderSession();
 }
 
 function closeSessionDialog(){
-  const s = activeSession();
-  if(!s) return;
-  const net = sessionNet(s);
-  const nt = netText(net);
-  if(!confirm(`Cerrar "${s.name}"?\n\nResultado final: ${nt.amount} — ${nt.text}\n\nQuedará guardada en el historial y podrás empezar otra.`)) return;
+  const g = activeGroup();
+  const s = openSessionOf(g);
+  if(!g || !s) return;
+  const balances = sessionBalances(s.tickets, g.participants);
+  const bn = balanceBannerHtml(balances, g.participants);
+  const plain = bn.html.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+  if(!confirm('¿Cerrar "'+s.name+'"?\n\nResultado final: '+bn.amount+' — '+plain+'\n\nQuedará guardada en el historial y podrás empezar otra.')) return;
   s.closedAt = new Date().toISOString();
-  s.finalNet = net;
-  touch(s);
-  state.activeSessionId = null;
+  s.finalBalances = balances;
+  touch(g, s);
   saveState();
   renderSession();
 }
 
 /* ---------- escanear ---------- */
 function openScanModal(){
+  const g = activeGroup();
+  if(!g){ showView('groups'); return; }
   if(!state.settings.apiKey){
     alert('Primero configura tu API key de Claude en Ajustes ⚙️');
     showView('settings');
     return;
   }
   scanPayer = null; scanImageB64 = null;
+  document.getElementById('scan-payer-list').innerHTML = g.participants.map(p => {
+    const c = participantColor(p.id);
+    return `<button style="background:${c.soft};color:${c.main}" onclick="scanChoosePayer('${p.id}')">${esc(p.name)}</button>`;
+  }).join('');
   document.getElementById('scan-step-payer').classList.remove('hidden');
   document.getElementById('scan-step-photo').classList.add('hidden');
   document.getElementById('preview').classList.add('hidden');
   document.getElementById('scan-process-btn').classList.add('hidden');
   document.getElementById('scan-status').innerHTML = '';
   document.getElementById('camera-input').value = '';
+  document.getElementById('scan-take-btn').textContent = '📷 Hacer foto';
   document.getElementById('scan-modal').classList.add('open');
 }
 function closeScanModal(){ document.getElementById('scan-modal').classList.remove('open'); }
-function scanChoosePayer(p){
-  scanPayer = p;
-  document.getElementById('scan-payer-label').textContent = NAMES[p];
+function scanChoosePayer(pid){
+  const g = activeGroup();
+  scanPayer = pid;
+  document.getElementById('scan-payer-label').textContent = payerName(g, pid);
   document.getElementById('scan-step-payer').classList.add('hidden');
   document.getElementById('scan-step-photo').classList.remove('hidden');
   document.getElementById('camera-input').click();
@@ -602,19 +912,24 @@ function photoSelected(input){
 async function processTicket(){
   const status = document.getElementById('scan-status');
   const btn = document.getElementById('scan-process-btn');
+  const g = activeGroup();
+  if(!g) return;
   btn.disabled = true;
   status.innerHTML = '<div class="spinner"></div><p class="muted center">Leyendo el ticket con IA…</p>';
   try{
     const data = await callClaudeOCR(scanImageB64);
+    const allIds = g.participants.map(p=>p.id);
     reviewTicket = {
       id: uid(),
       date: data.fecha || new Date().toLocaleDateString('es-ES'),
-      store: data.tienda || 'Súper',
+      store: data.tienda || 'Ticket',
       payer: scanPayer,
       items: (data.articulos||[]).map(a => ({
-        name: a.nombre, orig: a.texto_original || '', price: Math.round(a.precio*100)/100, assign: 'ambos'
+        name: a.nombre, orig: a.texto_original || '', price: Math.round(a.precio*100)/100, shareWith: [...allIds]
       }))
     };
+    reviewGroupId = g.id;
+    reviewSessionId = openSessionOf(g).id;
     reviewIsNew = true;
     btn.disabled = false;
     closeScanModal();
@@ -630,14 +945,14 @@ async function callClaudeOCR(imageB64){
   const schema = {
     type: 'object',
     properties: {
-      tienda: { type:'string', description:'Nombre del supermercado (Mercadona, Lidl, Gadis, Familia, etc.)' },
+      tienda: { type:'string', description:'Nombre del establecimiento (supermercado, cine, etc.)' },
       fecha:  { type:'string', description:'Fecha del ticket en formato dd/mm/aaaa, o cadena vacía si no aparece' },
       articulos: {
         type:'array',
         items: {
           type:'object',
           properties: {
-            nombre: { type:'string', description:'Nombre del producto interpretado y legible en español' },
+            nombre: { type:'string', description:'Nombre del producto/concepto interpretado y legible en español' },
             texto_original: { type:'string', description:'Texto literal de la línea tal y como aparece en el ticket' },
             precio: { type:'number', description:'Importe total de la línea en euros; negativo si es un descuento' }
           },
@@ -651,10 +966,10 @@ async function callClaudeOCR(imageB64){
     additionalProperties: false
   };
 
-  const prompt = `Extrae los artículos de esta foto de un ticket de supermercado español (puede ser Mercadona, Lidl, Gadis, Familia u otros).
+  const prompt = `Extrae los artículos de esta foto de un ticket o recibo español (puede ser de un supermercado como Mercadona, Lidl, Gadis, Familia, o de otro tipo de comercio).
 
 Reglas:
-- Una entrada por línea de artículo, con su importe FINAL en euros (si la línea es "2 x 1,50 3,00", el precio es 3,00).
+- Una entrada por línea de artículo/concepto, con su importe FINAL en euros (si la línea es "2 x 1,50 3,00", el precio es 3,00).
 - Muchos tickets usan abreviaturas o códigos internos crípticos: interpreta el nombre más probable del producto en español legible (p. ej. "LTE ENT B.1L" → "Leche entera brik 1L"). Si no puedes descifrarlo, deja el texto tal cual.
 - Guarda siempre en texto_original la línea literal del ticket.
 - Incluye los descuentos/cupones como artículos con precio negativo.
@@ -703,11 +1018,15 @@ Reglas:
 }
 
 /* ---------- revisar ticket ---------- */
+function reviewGroupRef(){ return findGroup(reviewGroupId); }
 function openTicket(index){
-  const s = activeSession();
-  if(!s) return;
+  const g = activeGroup();
+  const s = openSessionOf(g);
+  if(!g || !s) return;
   reviewTicket = JSON.parse(JSON.stringify(s.tickets[index]));
   reviewTicket._index = index;
+  reviewGroupId = g.id;
+  reviewSessionId = s.id;
   reviewIsNew = false;
   openReview();
 }
@@ -717,80 +1036,110 @@ function openReview(){
   document.getElementById('fab-scan').classList.add('hidden');
   document.getElementById('rv-store').value = reviewTicket.store || '';
   document.getElementById('rv-date').value = reviewTicket.date || '';
-  setReviewPayer(reviewTicket.payer);
+  renderReviewPayerList();
+  renderQuickAssign();
   renderReviewItems();
   window.scrollTo(0,0);
 }
-function setReviewPayer(p){
-  reviewTicket.payer = p;
-  document.getElementById('rv-payer-jito').classList.toggle('sel', p==='jito');
-  document.getElementById('rv-payer-larita').classList.toggle('sel', p==='larita');
+function renderReviewPayerList(){
+  const g = reviewGroupRef();
+  document.getElementById('rv-payer-list').innerHTML = g.participants.map(p => {
+    const c = participantColor(p.id);
+    const sel = reviewTicket.payer===p.id;
+    return `<button style="background:${c.soft};color:${c.main}" class="${sel?'sel':''}" onclick="setReviewPayer('${p.id}')">${esc(p.name)}</button>`;
+  }).join('');
+}
+function setReviewPayer(pid){
+  reviewTicket.payer = pid;
+  renderReviewPayerList();
   renderReviewSummary();
+}
+function renderQuickAssign(){
+  const g = reviewGroupRef();
+  let html = '<span class="muted" style="align-self:center">Todo a:</span>';
+  html += `<button class="btn-secondary btn-small" onclick="assignAllEveryone()">Todos</button>`;
+  for(const p of g.participants){
+    const c = participantColor(p.id);
+    html += `<button style="background:${c.soft};color:${c.main}" onclick="assignAllTo('${p.id}')">${esc(p.name)}</button>`;
+  }
+  document.getElementById('rv-quick-assign').innerHTML = html;
+}
+function itemChipsHtml(item, i){
+  const g = reviewGroupRef();
+  return g.participants.map(p => {
+    const sel = (item.shareWith||[]).includes(p.id);
+    const c = participantColor(p.id);
+    const style = sel ? ('background:'+c.main+';color:#fff') : ('background:'+c.soft+';color:'+c.main);
+    return `<button type="button" class="chip-p" style="${style}" onclick="toggleItemParticipant(${i},'${p.id}')" title="${esc(p.name)}">${esc(initials(p.name))}</button>`;
+  }).join('');
 }
 function renderReviewItems(){
   const cont = document.getElementById('rv-items');
   cont.innerHTML = reviewTicket.items.map((it,i) => `
     <div class="item-row">
-      <div class="iname" onclick="openEditModal(${i})">
-        <div class="n">${esc(it.name)}</div>
-        ${it.orig && it.orig !== it.name ? `<div class="orig">${esc(it.orig)}</div>` : ''}
+      <div class="irow1">
+        <div class="iname" onclick="openEditModal(${i})">
+          <div class="n">${esc(it.name)}</div>
+          ${it.orig && it.orig !== it.name ? `<div class="orig">${esc(it.orig)}</div>` : ''}
+        </div>
+        <div class="iprice" onclick="openEditModal(${i})">${fmt(it.price)}</div>
       </div>
-      <div class="iprice" onclick="openEditModal(${i})">${fmt(it.price)}</div>
-      <div class="seg">
-        <button class="${it.assign==='jito'?'sel-jito':''}" onclick="setAssign(${i},'jito')">J</button>
-        <button class="${it.assign==='ambos'?'sel-ambos':''}" onclick="setAssign(${i},'ambos')">A</button>
-        <button class="${it.assign==='larita'?'sel-larita':''}" onclick="setAssign(${i},'larita')">L</button>
-      </div>
+      <div class="irow2">${itemChipsHtml(it,i)}</div>
     </div>`).join('');
   renderReviewSummary();
 }
-function setAssign(i, who){
-  reviewTicket.items[i].assign = who;
+function toggleItemParticipant(i, pid){
+  const it = reviewTicket.items[i];
+  it.shareWith = it.shareWith || [];
+  const idx = it.shareWith.indexOf(pid);
+  if(idx>=0) it.shareWith.splice(idx,1); else it.shareWith.push(pid);
   renderReviewItems();
 }
-function assignAll(who){
-  reviewTicket.items.forEach(it => it.assign = who);
+function assignAllTo(pid){
+  reviewTicket.items.forEach(it => it.shareWith = [pid]);
+  renderReviewItems();
+}
+function assignAllEveryone(){
+  const g = reviewGroupRef();
+  const all = g.participants.map(p=>p.id);
+  reviewTicket.items.forEach(it => it.shareWith = [...all]);
   renderReviewItems();
 }
 function renderReviewSummary(){
+  const g = reviewGroupRef();
   const t = reviewTicket;
   const total = t.items.reduce((a,b)=>a+b.price,0);
-  const sumJito = t.items.filter(i=>i.assign==='jito').reduce((a,b)=>a+b.price,0);
-  const sumLarita = t.items.filter(i=>i.assign==='larita').reduce((a,b)=>a+b.price,0);
-  const sumAmbos = t.items.filter(i=>i.assign==='ambos').reduce((a,b)=>a+b.price,0);
-  const owed = ticketOwed(t);
-  const other = t.payer==='jito' ? 'Larita' : 'Jito';
-  const payer = NAMES[t.payer];
-  document.getElementById('rv-summary').innerHTML = `
-    <div class="totline"><span>Total ticket</span><span>${fmt(total)}</span></div>
-    <div class="totline"><span>Solo Jito</span><span>${fmt(sumJito)}</span></div>
-    <div class="totline"><span>Ambos (a medias)</span><span>${fmt(sumAmbos)} → ${fmt(sumAmbos/2)} cada uno</span></div>
-    <div class="totline"><span>Solo Larita</span><span>${fmt(sumLarita)}</span></div>
-    <div class="totline" style="border-top:1px solid var(--border); padding-top:6px; margin-top:4px">
-      <strong>${other} debe a ${payer}</strong><strong>${fmt(owed)}</strong>
-    </div>`;
+  const balances = ticketBalances(t, g.participants);
+  const lines = simplifyDebts(balances, g.participants);
+  let html = `<div class="totline"><span>Total ticket</span><strong>${fmt(total)}</strong></div>`;
+  if(lines.length){
+    html += '<div style="border-top:1px solid var(--border); margin-top:6px; padding-top:6px">' +
+      lines.map(l => `<div class="totline"><strong>${esc(payerNameById(g.participants,l.from))} → ${esc(payerNameById(g.participants,l.to))}</strong><strong>${fmt(l.amount)}</strong></div>`).join('') +
+      '</div>';
+  }else{
+    html += '<div class="totline"><span class="muted">Sin deudas — todo queda para quien pagó</span></div>';
+  }
+  document.getElementById('rv-summary').innerHTML = html;
 }
 function addManualItem(){
-  reviewTicket.items.push({ name:'Artículo', orig:'', price:0, assign:'ambos' });
+  const g = reviewGroupRef();
+  reviewTicket.items.push({ name:'Artículo', orig:'', price:0, shareWith: g.participants.map(p=>p.id) });
   renderReviewItems();
   openEditModal(reviewTicket.items.length-1);
 }
 function saveReview(){
-  reviewTicket.store = document.getElementById('rv-store').value.trim() || 'Súper';
+  const g = findGroup(reviewGroupId);
+  const s = g && (g.sessions||[]).find(x=>x.id===reviewSessionId);
+  if(!g || !s){ alert('Este grupo o sesión ya no existe.'); showView('groups'); return; }
+  reviewTicket.store = document.getElementById('rv-store').value.trim() || 'Ticket';
   reviewTicket.date = document.getElementById('rv-date').value.trim();
-  const s = activeSession();
-  if(!s){ alert('No hay sesión activa.'); return; }
+  const t = JSON.parse(JSON.stringify(reviewTicket));
+  delete t._index;
+  touch(s, t);
   if(reviewIsNew){
-    const t = JSON.parse(JSON.stringify(reviewTicket));
-    delete t._index;
-    touch(s, t);
     s.tickets.push(t);
   }else{
-    const idx = reviewTicket._index;
-    const t = JSON.parse(JSON.stringify(reviewTicket));
-    delete t._index;
-    touch(s, t);
-    s.tickets[idx] = t;
+    s.tickets[reviewTicket._index] = t;
   }
   saveState();
   reviewTicket = null;
@@ -800,13 +1149,15 @@ function discardReview(){
   if(reviewIsNew){
     if(!confirm('¿Descartar este ticket? Se perderá lo escaneado.')) return;
   }else{
-    // ofrecer borrar el ticket existente
     if(confirm('¿Quieres BORRAR este ticket de la sesión?\n(Cancelar = volver sin guardar cambios)')){
-      const s = activeSession();
-      const removed = s.tickets.splice(reviewTicket._index, 1);
-      if(removed[0]) state.deleted.tickets.push(removed[0].id);
-      touch(s);
-      saveState();
+      const g = findGroup(reviewGroupId);
+      const s = g && g.sessions.find(x=>x.id===reviewSessionId);
+      if(g && s){
+        const removed = s.tickets.splice(reviewTicket._index, 1);
+        if(removed[0]) state.deleted.tickets.push(removed[0].id);
+        touch(g, s);
+        saveState();
+      }
     }
   }
   reviewTicket = null;
@@ -839,44 +1190,50 @@ function deleteEditItem(){
 
 /* ---------- historial ---------- */
 function renderHistory(){
-  const closed = state.sessions.filter(s => s.closedAt).sort((a,b)=> b.closedAt.localeCompare(a.closedAt));
-  document.getElementById('no-history-msg').classList.toggle('hidden', closed.length>0);
+  const g = activeGroup();
+  document.getElementById('history-no-group').classList.toggle('hidden', !!g);
+  document.getElementById('history-content').classList.toggle('hidden', !g);
   document.getElementById('history-detail').classList.add('hidden');
   document.getElementById('history-detail').innerHTML = '';
+  if(!g) return;
+  const closed = (g.sessions||[]).filter(s => s.closedAt).sort((a,b)=> b.closedAt.localeCompare(a.closedAt));
+  document.getElementById('no-history-msg').classList.toggle('hidden', closed.length>0);
   document.getElementById('history-list').innerHTML = closed.map(s => {
-    const net = s.finalNet !== undefined ? s.finalNet : sessionNet(s);
-    const nt = netText(net);
+    const balances = s.finalBalances || sessionBalances(s.tickets, g.participants);
+    const bn = balanceBannerHtml(balances, g.participants);
+    const plain = bn.html.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
     return `<div class="hist-item" onclick="showHistoryDetail('${s.id}')">
       <div class="name">${esc(s.name)}</div>
       <div class="meta">${s.tickets.length} tickets · cerrada el ${new Date(s.closedAt).toLocaleDateString('es-ES')}</div>
-      <div class="final">${nt.amount} — ${nt.text}</div>
+      <div class="final">${bn.amount} — ${esc(plain)}</div>
     </div>`;
   }).join('');
 }
-function showHistoryDetail(id){
-  const s = state.sessions.find(x=>x.id===id);
-  if(!s) return;
-  const net = s.finalNet !== undefined ? s.finalNet : sessionNet(s);
-  const nt = netText(net);
+function showHistoryDetail(sessionId){
+  const g = activeGroup();
+  const s = g && g.sessions.find(x=>x.id===sessionId);
+  if(!g || !s) return;
+  const balances = s.finalBalances || sessionBalances(s.tickets, g.participants);
+  const bn = balanceBannerHtml(balances, g.participants);
   const detail = document.getElementById('history-detail');
   detail.classList.remove('hidden');
   detail.innerHTML = `
-    <div class="balance ${nt.cls}">
+    <div class="balance">
       <div style="opacity:.8">${esc(s.name)}</div>
-      <div class="amount">${nt.amount}</div>
-      <div style="font-weight:600">${nt.text}</div>
+      <div class="amount">${bn.amount}</div>
+      <div class="lines">${bn.html}</div>
     </div>
     <div class="card">
       <h2>Tickets</h2>
       ${s.tickets.map(t => {
-        const owed = ticketOwed(t);
-        const other = t.payer==='jito' ? 'Larita' : 'Jito';
+        const total = t.items.reduce((a,b)=>a+b.price,0);
+        const c = participantColor(t.payer);
         return `<div class="ticket-item" style="cursor:default">
           <div class="info">
-            <div class="store">${esc(t.store)} <span class="payer-chip ${t.payer}">pagó ${NAMES[t.payer]}</span></div>
-            <div class="meta">${esc(t.date||'')} · ${t.items.length} artículos · total ${fmt(t.items.reduce((a,b)=>a+b.price,0))}</div>
+            <div class="store">${esc(t.store)} <span class="payer-chip" style="background:${c.soft};color:${c.main}">pagó ${esc(payerName(g,t.payer))}</span></div>
+            <div class="meta">${esc(t.date||'')} · ${t.items.length} artículos</div>
           </div>
-          <div class="bal">${other} debía<br>${fmt(owed)}</div>
+          <div class="bal">${fmt(total)}</div>
         </div>`;
       }).join('') || '<p class="muted">Sin tickets.</p>'}
       <button class="btn-danger-soft" style="margin-top:12px" onclick="deleteSession('${s.id}')">🗑 Borrar esta sesión</button>
@@ -884,9 +1241,12 @@ function showHistoryDetail(id){
   detail.scrollIntoView({behavior:'smooth'});
 }
 function deleteSession(id){
-  if(!confirm('¿Borrar esta sesión y todos sus tickets? No se puede deshacer (se borrará también en el otro móvil).')) return;
-  state.sessions = state.sessions.filter(s=>s.id!==id);
+  if(!confirm('¿Borrar esta sesión y todos sus tickets? No se puede deshacer (se borrará también en el otro dispositivo).')) return;
+  const g = activeGroup();
+  if(!g) return;
+  g.sessions = g.sessions.filter(s=>s.id!==id);
   state.deleted.sessions.push(id);
+  touch(g);
   saveState();
   renderHistory();
 }
@@ -970,7 +1330,7 @@ function exportData(){
   const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'tickets-super-'+new Date().toISOString().slice(0,10)+'.json';
+  a.download = 'tickets-'+new Date().toISOString().slice(0,10)+'.json';
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -980,20 +1340,19 @@ function importData(input){
   const reader = new FileReader();
   reader.onload = () => {
     try{
-      const data = JSON.parse(reader.result);
-      if(!Array.isArray(data.sessions)) throw new Error('formato no válido');
-      if(!confirm('Esto sustituirá las sesiones actuales por las del fichero (' + data.sessions.length + ' sesiones). ¿Continuar?')) return;
+      const raw = JSON.parse(reader.result);
+      const data = migrateRaw(raw);
+      if(!confirm('Esto sustituirá los grupos actuales por los del fichero (' + data.groups.length + ' grupos). ¿Continuar?')) return;
       const apiKey = state.settings.apiKey;
       const model = state.settings.model;
       const sync = state.settings.sync;
       state = data;
-      state.settings = state.settings || {};
       state.settings.apiKey = apiKey;
       state.settings.model = state.settings.model || model;
       state.settings.sync = sync || { token:'', repo:'' };
-      state.deleted = state.deleted || { sessions:[], tickets:[] };
+      normalizeActiveGroup(state);
       saveState();
-      showView('session');
+      showView('groups');
       alert('Datos importados ✅');
     }catch(e){
       alert('No se pudo importar: '+e.message);
@@ -1038,7 +1397,7 @@ function b64DecodeUtf8(b64){
    que pegarla en cada móvil. El token de GitHub nunca se comparte. */
 function stateCore(){
   return {
-    sessions: state.sessions,
+    groups: state.groups,
     deleted: state.deleted,
     shared: {
       apiKey: state.settings.apiKey || '',
@@ -1052,40 +1411,48 @@ function mergeShared(a, b){
   if(!b || (!b.apiKey && !b.updatedAt)) return a;
   return (a.updatedAt||'') >= (b.updatedAt||'') ? a : b;
 }
-/* Fusión: unión de sesiones y tickets por id; en conflicto gana el más reciente; los borrados no reviven */
+/* Fusión genérica por id: gana el más reciente; permite fusionar el hijo (sesiones dentro de grupo, tickets dentro de sesión) */
+function mergeById(localArr, remoteArr, childMerge){
+  const map = new Map();
+  for(const r of (remoteArr||[])) map.set(r.id, JSON.parse(JSON.stringify(r)));
+  for(const l of (localArr||[])){
+    if(!map.has(l.id)){ map.set(l.id, JSON.parse(JSON.stringify(l))); continue; }
+    map.set(l.id, childMerge(l, map.get(l.id)));
+  }
+  return [...map.values()];
+}
+function mergeTicket(l, r){ return (l.updatedAt||'') >= (r.updatedAt||'') ? l : r; }
+function mergeSession(l, r){
+  const newer = (l.updatedAt||'') >= (r.updatedAt||'') ? l : r;
+  const merged = JSON.parse(JSON.stringify(newer));
+  merged.tickets = mergeById(l.tickets, r.tickets, mergeTicket);
+  return merged;
+}
+function mergeGroup(l, r){
+  const newer = (l.updatedAt||'') >= (r.updatedAt||'') ? l : r;
+  const merged = JSON.parse(JSON.stringify(newer)); // nombre/icono/personas/sesión activa: gana el más reciente
+  merged.sessions = mergeById(l.sessions, r.sessions, mergeSession);
+  return merged;
+}
+/* Fusión: unión de grupos/sesiones/tickets por id; en conflicto gana el más reciente; los borrados no reviven */
 function mergeStates(local, remote){
   const del = {
-    sessions: [...new Set([...(local.deleted?.sessions||[]), ...(remote.deleted?.sessions||[])])],
-    tickets:  [...new Set([...(local.deleted?.tickets||[]),  ...(remote.deleted?.tickets||[])])]
+    groups:   uniq([...(local.deleted?.groups||[]),   ...(remote.deleted?.groups||[])]),
+    sessions: uniq([...(local.deleted?.sessions||[]), ...(remote.deleted?.sessions||[])]),
+    tickets:  uniq([...(local.deleted?.tickets||[]),  ...(remote.deleted?.tickets||[])])
   };
-  const byId = new Map();
-  for(const s of (remote.sessions||[])) byId.set(s.id, JSON.parse(JSON.stringify(s)));
-  for(const sl of (local.sessions||[])){
-    const s = JSON.parse(JSON.stringify(sl));
-    if(!byId.has(s.id)){ byId.set(s.id, s); continue; }
-    const r = byId.get(s.id);
-    const newer = (s.updatedAt||'') >= (r.updatedAt||'') ? s : r;
-    const merged = JSON.parse(JSON.stringify(newer));
-    const tmap = new Map();
-    for(const t of (r.tickets||[])) tmap.set(t.id, t);
-    for(const t of (s.tickets||[])){
-      const rt = tmap.get(t.id);
-      if(!rt || (t.updatedAt||'') >= (rt.updatedAt||'')) tmap.set(t.id, t);
-    }
-    merged.tickets = [...tmap.values()];
-    byId.set(s.id, merged);
-  }
-  const sessions = [...byId.values()]
-    .filter(s => !del.sessions.includes(s.id))
-    .map(s => { s.tickets = (s.tickets||[]).filter(t => !del.tickets.includes(t.id)); return s; })
+  let groups = mergeById(local.groups, remote.groups, mergeGroup);
+  groups = groups
+    .filter(g => !del.groups.includes(g.id))
+    .map(g => {
+      g.sessions = (g.sessions||[]).filter(s => !del.sessions.includes(s.id)).map(s => {
+        s.tickets = (s.tickets||[]).filter(t => !del.tickets.includes(t.id));
+        return s;
+      });
+      return g;
+    })
     .sort((a,b) => (a.createdAt||'').localeCompare(b.createdAt||''));
-  return { sessions, deleted: del, shared: mergeShared(local.shared, remote.shared) };
-}
-function fixActiveSession(){
-  const cur = state.sessions.find(s => s.id === state.activeSessionId && !s.closedAt);
-  if(cur) return;
-  const open = state.sessions.find(s => !s.closedAt);
-  state.activeSessionId = open ? open.id : null;
+  return { groups, deleted: del, shared: mergeShared(local.shared, remote.shared) };
 }
 async function syncNow(manual, isRetry){
   if(!syncConfigured()) {
@@ -1104,13 +1471,13 @@ async function syncNow(manual, isRetry){
       'X-GitHub-Api-Version': '2022-11-28'
     };
     const url = 'https://api.github.com/repos/' + repo + '/contents/data.json';
-    let sha = null, remote = null, remoteRaw = null;
+    let sha = null, remoteCore = null, remoteRaw = null;
     const res = await fetch(url + '?nocache=' + Date.now(), { headers });
     if(res.status === 200){
       const j = await res.json();
       sha = j.sha;
       remoteRaw = b64DecodeUtf8(j.content);
-      remote = JSON.parse(remoteRaw);
+      remoteCore = remoteToGroups(JSON.parse(remoteRaw));
     }else if(res.status === 401){ throw new Error('Token no válido o caducado. Genera otro en github.com/settings/personal-access-tokens.');
     }else if(res.status === 403){ throw new Error('El token no tiene permiso sobre ese repositorio.');
     }else if(res.status === 404){
@@ -1122,15 +1489,15 @@ async function syncNow(manual, isRetry){
       // repo accesible y fichero inexistente: primera sincronización, seguimos
     }else{ throw new Error('GitHub respondió ' + res.status + '. Revisa el nombre del repositorio.'); }
 
-    const merged = remote ? mergeStates(stateCore(), remote) : stateCore();
-    state.sessions = merged.sessions;
+    const merged = remoteCore ? mergeStates(stateCore(), remoteCore) : stateCore();
+    state.groups = merged.groups;
     state.deleted = merged.deleted;
     if(merged.shared && merged.shared.apiKey !== undefined){
       state.settings.apiKey = merged.shared.apiKey;
       state.settings.model = merged.shared.model || state.settings.model;
       state.settings.sharedUpdatedAt = merged.shared.updatedAt || '';
     }
-    fixActiveSession();
+    normalizeActiveGroup(state);
     saveLocalOnly();
     if(currentView==='settings') renderSettings();
 
@@ -1145,7 +1512,7 @@ async function syncNow(manual, isRetry){
         })
       });
       if(put.status === 409 || put.status === 422){
-        // otro móvil escribió a la vez: reintentar una vez con los datos frescos
+        // otro dispositivo escribió a la vez: reintentar una vez con los datos frescos
         if(!isRetry){ syncInFlight = false; return syncNow(manual, true); }
         throw new Error('Conflicto de escritura, reintenta en unos segundos.');
       }
@@ -1154,8 +1521,10 @@ async function syncNow(manual, isRetry){
     }
     setSyncIcon('ok','Sincronizado ✓ (toca para forzar)');
     if(msgEl) msgEl.innerHTML = '<div class="ok-box">✅ Sincronizado correctamente.</div>';
+    if(currentView==='groups') renderGroups();
     if(currentView==='session') renderSession();
     if(currentView==='history') renderHistory();
+    renderHeader();
   }catch(err){
     setSyncIcon('error','Error de sincronización: ' + err.message + ' (toca para reintentar)');
     if(msgEl) msgEl.innerHTML = '<div class="error-box">⚠️ ' + esc(err.message) + '</div>';
@@ -1183,11 +1552,11 @@ function saveSyncSettings(){
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
-showView('session');
-document.getElementById('app-version').textContent = 'Tickets Súper · versión ' + APP_VERSION;
+showView(activeGroup() ? 'session' : 'groups');
+document.getElementById('app-version').textContent = 'Tickets · versión ' + APP_VERSION;
 setSyncIcon('ok');
 if(syncConfigured()) syncNow(false);
-// al volver a la app (cambio de pestaña/desbloqueo), traer novedades del otro móvil
+// al volver a la app (cambio de pestaña/desbloqueo), traer novedades de otros dispositivos
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'visible' && syncConfigured()) syncNow(false);
 });
